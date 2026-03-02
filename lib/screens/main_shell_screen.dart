@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/camera_settings_provider.dart';
 import 'camera_tab_screen.dart';
+import 'map_tab_screen.dart';
 import 'records_tab_screen.dart';
 
 class MainShellScreen extends ConsumerWidget {
@@ -15,6 +16,7 @@ class MainShellScreen extends ConsumerWidget {
       body: IndexedStack(
         index: currentIndex,
         children: const [
+          MapTabScreen(),
           CameraTabScreen(),
           RecordsTabScreen(),
         ],
@@ -27,14 +29,19 @@ class MainShellScreen extends ConsumerWidget {
         height: 60,
         destinations: const [
           NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map),
+            label: '지도',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.videocam_outlined),
             selectedIcon: Icon(Icons.videocam),
-            label: '영상 촬영',
+            label: '촬영',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
-            label: '기록',
+            label: '캘린더',
           ),
         ],
       ),
