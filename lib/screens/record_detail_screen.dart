@@ -260,35 +260,13 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                     ],
                   ),
 
-                  if (record.gymName != null || record.tags.isNotEmpty)
+                  if (record.tags.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 24),
                       child: Divider(
                           height: 1,
                           color: colorScheme.outline.withOpacity(0.15)),
                     ),
-
-                  // 암장
-                  if (record.gymName != null) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      '클라이밍장',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withOpacity(0.4),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      record.gymName!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
 
                   // 태그
                   if (record.tags.isNotEmpty) ...[

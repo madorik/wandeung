@@ -46,6 +46,9 @@ class CameraSettingsNotifier extends StateNotifier<CameraSettings> {
   void setManualGymName(String name) =>
       state = state.copyWith(manualGymName: name, clearGym: true);
 
+  void clearGym() =>
+      state = state.copyWith(clearGym: true, clearManualGymName: true);
+
   void reset() => state = const CameraSettings();
 }
 

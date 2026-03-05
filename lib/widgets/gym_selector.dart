@@ -63,13 +63,18 @@ class _GymSelectorState extends ConsumerState<GymSelector> {
           TextField(
             controller: _controller,
             decoration: const InputDecoration(
-              hintText: '클라이밍장 이름 입력',
+              hintText: '클라이밍장 이름을 입력 후 엔터',
               border: OutlineInputBorder(),
               isDense: true,
             ),
             textInputAction: TextInputAction.done,
-            onChanged: widget.onManualInput,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
+            onSubmitted: (value) {
+              final trimmed = value.trim();
+              if (trimmed.isNotEmpty) {
+                widget.onManualInput(trimmed);
+              }
+              FocusScope.of(context).unfocus();
+            },
           )
         else
           nearbyGyms.when(

@@ -36,38 +36,77 @@ class _TagInputState extends State<TagInput> {
       children: [
         const Text('태그',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        const SizedBox(height: 8),
-        if (widget.tags.isNotEmpty)
+        const SizedBox(height: 10),
+        if (widget.tags.isNotEmpty) ...[
           Wrap(
             spacing: 8,
-            runSpacing: 4,
+            runSpacing: 8,
             children: widget.tags
-                .map((tag) => Chip(
-                      label: Text(tag),
-                      onDeleted: () {
-                        widget.onTagsChanged(
-                            widget.tags.where((t) => t != tag).toList());
-                      },
+                .map((tag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            tag,
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () => widget.onTagsChanged(
+                                widget.tags.where((t) => t != tag).toList()),
+                            child: Icon(Icons.close,
+                                size: 15, color: Colors.green.shade400),
+                          ),
+                        ],
+                      ),
                     ))
                 .toList(),
           ),
-        if (widget.tags.isNotEmpty) const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                decoration: const InputDecoration(
-                  hintText: '#태그 입력 (예: #발컨, #슬탭)',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+          const SizedBox(height: 10),
+        ],
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: '#태그 입력',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                  ),
+                  onSubmitted: (_) => _addTag(),
                 ),
-                onSubmitted: (_) => _addTag(),
               ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(onPressed: _addTag, icon: const Icon(Icons.add)),
-          ],
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: IconButton(
+                  onPressed: _addTag,
+                  icon:
+                      Icon(Icons.add_circle, color: Colors.green.shade400, size: 26),
+                  tooltip: '태그 추가',
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

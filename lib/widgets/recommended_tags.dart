@@ -21,47 +21,46 @@ class RecommendedTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('추천 태그',
-            style: TextStyle(fontSize: 13, color: Colors.grey)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: recommendedTags.map((tag) {
-            final isSelected = currentTags.contains(tag);
-            return GestureDetector(
-              onTap: () {
-                final updated = List<String>.from(currentTags);
-                if (isSelected) {
-                  updated.remove(tag);
-                } else {
-                  updated.add(tag);
-                }
-                onTagsChanged(updated);
-              },
-              child: Chip(
-                label: Text(
-                  tag,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isSelected ? Colors.green.shade700 : Colors.grey.shade600,
-                  ),
-                ),
-                backgroundColor:
-                    isSelected ? Colors.green.shade50 : Colors.grey.shade100,
-                side: BorderSide(
-                  color: isSelected ? Colors.green.shade300 : Colors.grey.shade300,
-                ),
-                padding: EdgeInsets.zero,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: recommendedTags.map((tag) {
+        final isSelected = currentTags.contains(tag);
+        return GestureDetector(
+          onTap: () {
+            final updated = List<String>.from(currentTags);
+            if (isSelected) {
+              updated.remove(tag);
+            } else {
+              updated.add(tag);
+            }
+            onTagsChanged(updated);
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.green.shade50 : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color:
+                    isSelected ? Colors.green.shade300 : Colors.grey.shade300,
+                width: isSelected ? 1.5 : 1,
               ),
-            );
-          }).toList(),
-        ),
-      ],
+            ),
+            child: Text(
+              tag,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected
+                    ? Colors.green.shade700
+                    : Colors.grey.shade600,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

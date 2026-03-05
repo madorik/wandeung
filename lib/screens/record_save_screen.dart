@@ -159,7 +159,7 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final maxHeight =
-                      MediaQuery.of(context).size.height * 0.45;
+                      MediaQuery.of(context).size.height * 0.22;
                   final naturalHeight =
                       constraints.maxWidth / _displayAspectRatio;
                   final playerHeight =
@@ -203,7 +203,7 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                   );
                 },
               ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // 난이도 선택 (카메라에서 미선택 시 fallback)
             if (!hasColor) ...[
@@ -212,7 +212,7 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                 onColorChanged: (c) =>
                     ref.read(cameraSettingsProvider.notifier).setColor(c),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
 
             // 암장
@@ -220,25 +220,38 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 8),
             if (settings.selectedGym != null || settings.manualGymName != null)
-              // 카메라에서 선택한 암장 표시
               Container(
                 width: double.infinity,
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.green.shade50,
+                  border: Border.all(color: Colors.green.shade200),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on,
-                        size: 18, color: Colors.green),
-                    const SizedBox(width: 8),
-                    Text(
-                      settings.selectedGym?.name ??
-                          settings.manualGymName ??
-                          '',
-                      style: const TextStyle(fontSize: 15),
+                    Icon(Icons.location_on,
+                        size: 18, color: Colors.green.shade600),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        settings.selectedGym?.name ??
+                            settings.manualGymName ??
+                            '',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.green.shade800,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => ref
+                          .read(cameraSettingsProvider.notifier)
+                          .clearGym(),
+                      child: Icon(Icons.close,
+                          size: 18, color: Colors.grey.shade500),
                     ),
                   ],
                 ),
@@ -257,26 +270,76 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                     .read(cameraSettingsProvider.notifier)
                     .setManualGymName(name),
               ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // 완등 여부
             const Text('완등 여부',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 8),
-            SegmentedButton<ClimbingStatus>(
-              segments: ClimbingStatus.values
-                  .map((s) => ButtonSegment(
-                        value: s,
-                        label: Text(s.label),
-                        icon: s == ClimbingStatus.completed
-                            ? const Icon(Icons.check_circle_outline)
-                            : const Icon(Icons.sports_kabaddi),
-                      ))
-                  .toList(),
-              selected: {_status},
-              onSelectionChanged: (s) => setState(() => _status = s.first),
+            Row(
+              children: ClimbingStatus.values.map((s) {
+                final isSelected = _status == s;
+                final isCompleted = s == ClimbingStatus.completed;
+                return Padding(
+                  padding: EdgeInsets.only(right: isCompleted ? 8 : 0),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _status = s),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (isCompleted
+                                ? const Color(0xFFEAF5EC)
+                                : const Color(0xFFFFF3E0))
+                            : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? (isCompleted
+                                  ? const Color(0xFFA5D6A7)
+                                  : const Color(0xFFFFCC80))
+                              : Colors.grey.shade300,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isCompleted
+                                ? Icons.check_circle
+                                : Icons.sports_kabaddi,
+                            color: isSelected
+                                ? (isCompleted
+                                    ? const Color(0xFF2E7D32)
+                                    : const Color(0xFFE65100))
+                                : Colors.grey.shade400,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            s.label,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              fontSize: 13,
+                              color: isSelected
+                                  ? (isCompleted
+                                      ? const Color(0xFF2E7D32)
+                                      : const Color(0xFFE65100))
+                                  : Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // 태그 입력
             TagInput(
@@ -290,7 +353,7 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
               currentTags: _tags,
               onTagsChanged: (tags) => setState(() => _tags = tags),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
             // 하단 버튼: 삭제 + 저장하기
             Row(
