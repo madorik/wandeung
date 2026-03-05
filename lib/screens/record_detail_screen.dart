@@ -128,9 +128,28 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
           children: [
             // 영상 플레이어
             if (_chewieController != null)
-              AspectRatio(
-                aspectRatio: _displayAspectRatio!,
-                child: Chewie(controller: _chewieController!),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxHeight =
+                      MediaQuery.of(context).size.height * 0.5;
+                  final naturalHeight =
+                      constraints.maxWidth / _displayAspectRatio!;
+                  final playerHeight =
+                      naturalHeight > maxHeight ? maxHeight : naturalHeight;
+
+                  return SizedBox(
+                    width: double.infinity,
+                    height: playerHeight,
+                    child: Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      child: AspectRatio(
+                        aspectRatio: _displayAspectRatio!,
+                        child: Chewie(controller: _chewieController!),
+                      ),
+                    ),
+                  );
+                },
               )
             else if (record.videoPath != null &&
                 _videoController == null &&

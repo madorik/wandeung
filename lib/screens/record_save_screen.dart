@@ -156,30 +156,52 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
           children: [
             // 영상 프리뷰
             if (_videoController.value.isInitialized)
-              AspectRatio(
-                aspectRatio: _displayAspectRatio,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    VideoPlayer(_videoController),
-                    IconButton(
-                      icon: Icon(
-                        _videoController.value.isPlaying
-                            ? Icons.pause_circle
-                            : Icons.play_circle,
-                        size: 48,
-                        color: Colors.white,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxHeight =
+                      MediaQuery.of(context).size.height * 0.45;
+                  final naturalHeight =
+                      constraints.maxWidth / _displayAspectRatio;
+                  final playerHeight =
+                      naturalHeight > maxHeight ? maxHeight : naturalHeight;
+
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: playerHeight,
+                      child: Container(
+                        color: Colors.black,
+                        alignment: Alignment.center,
+                        child: AspectRatio(
+                          aspectRatio: _displayAspectRatio,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              VideoPlayer(_videoController),
+                              IconButton(
+                                icon: Icon(
+                                  _videoController.value.isPlaying
+                                      ? Icons.pause_circle
+                                      : Icons.play_circle,
+                                  size: 48,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _videoController.value.isPlaying
+                                        ? _videoController.pause()
+                                        : _videoController.play();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _videoController.value.isPlaying
-                              ? _videoController.pause()
-                              : _videoController.play();
-                        });
-                      },
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
             const SizedBox(height: 24),
 
