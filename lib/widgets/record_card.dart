@@ -20,21 +20,20 @@ class RecordCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
+      elevation: 0,
       child: InkWell(
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
               builder: (_) => RecordSaveScreen(existingRecord: record)),
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              // 썸네일 또는 난이도 뱃지
               _buildThumbnailOrBadge(color),
               const SizedBox(width: 14),
-              // 정보
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,12 +43,13 @@ class RecordCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
                     Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
+                      spacing: 5,
+                      runSpacing: 5,
                       children: [
                         _StatusBadge(isCompleted: isCompleted),
                         ...record.tags.map((tag) => _TagBadge(
@@ -62,7 +62,6 @@ class RecordCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              // 비디오 재생 버튼
               if (record.videoPath != null)
                 GestureDetector(
                   onTap: () {
@@ -76,10 +75,10 @@ class RecordCard extends StatelessWidget {
                   },
                   behavior: HitTestBehavior.opaque,
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.5),
+                      color: colorScheme.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -128,17 +127,25 @@ class _GradeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = Color(color.colorValue);
     return Container(
       width: 72,
       height: 72,
       decoration: BoxDecoration(
-        color: Color(color.colorValue),
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            baseColor,
+            baseColor.withOpacity(0.85),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Color(color.colorValue).withOpacity(0.3),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: baseColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -150,7 +157,7 @@ class _GradeBadge extends StatelessWidget {
                 ? Colors.black87
                 : Colors.white,
             fontWeight: FontWeight.w800,
-            fontSize: 13,
+            fontSize: 14,
           ),
         ),
       ),
@@ -165,15 +172,12 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: isCompleted ? const Color(0xFFEAF5EC) : const Color(0xFFFFF3E0),
+        color: isCompleted
+            ? const Color(0xFF14B8A6).withOpacity(0.1)
+            : const Color(0xFFFF6B35).withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isCompleted
-              ? const Color(0xFFA5D6A7)
-              : const Color(0xFFFFCC80),
-        ),
       ),
       child: Text(
         isCompleted ? '완등' : '도전중',
@@ -181,7 +185,7 @@ class _StatusBadge extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: isCompleted
-              ? const Color(0xFF2E7D32)
+              ? const Color(0xFF0D9488)
               : const Color(0xFFE65100),
         ),
       ),

@@ -72,16 +72,20 @@ class _TagInputState extends State<TagInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('태그',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        Text('태그',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: Theme.of(context).colorScheme.onSurface,
+            )),
         const SizedBox(height: 10),
 
-        // 추천 태그 (토글 칩)
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: TagInput.recommendedTags.map((tag) {
             final isSelected = widget.tags.contains(tag);
+            final colorScheme = Theme.of(context).colorScheme;
             return GestureDetector(
               onTap: () => _toggleRecommended(tag),
               child: AnimatedContainer(
@@ -89,21 +93,22 @@ class _TagInputState extends State<TagInput> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? Colors.green.shade50 : Colors.grey.shade50,
+                  color: isSelected
+                      ? colorScheme.primary.withOpacity(0.08)
+                      : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
-                        ? Colors.green.shade300
-                        : Colors.grey.shade300,
+                        ? colorScheme.primary.withOpacity(0.4)
+                        : const Color(0xFFE2E8F0),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isSelected) ...[
-                      Icon(Icons.check,
-                          size: 14, color: Colors.green.shade600),
+                      Icon(Icons.check_rounded,
+                          size: 14, color: colorScheme.primary),
                       const SizedBox(width: 4),
                     ],
                     Text(
@@ -113,8 +118,8 @@ class _TagInputState extends State<TagInput> {
                         fontWeight:
                             isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected
-                            ? Colors.green.shade700
-                            : Colors.grey.shade600,
+                            ? colorScheme.primary
+                            : colorScheme.onSurface.withOpacity(0.55),
                       ),
                     ),
                   ],
@@ -124,53 +129,56 @@ class _TagInputState extends State<TagInput> {
           }).toList(),
         ),
 
-        // 커스텀 태그 (직접 입력한 것만)
         if (customTags.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: customTags
-                .map((tag) => Container(
-                      padding: const EdgeInsets.only(
-                          left: 12, right: 6, top: 6, bottom: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.green.shade200),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            tag,
-                            style: TextStyle(
-                              color: Colors.green.shade700,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
+                .map((tag) {
+                  final colorScheme = Theme.of(context).colorScheme;
+                  return Container(
+                    padding: const EdgeInsets.only(
+                        left: 12, right: 6, top: 6, bottom: 6),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: colorScheme.primary.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          tag,
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
-                          const SizedBox(width: 2),
-                          GestureDetector(
-                            onTap: () => _removeCustomTag(tag),
-                            child: Icon(Icons.close,
-                                size: 15, color: Colors.green.shade400),
-                          ),
-                        ],
-                      ),
-                    ))
+                        ),
+                        const SizedBox(width: 2),
+                        GestureDetector(
+                          onTap: () => _removeCustomTag(tag),
+                          child: Icon(Icons.close,
+                              size: 15,
+                              color: colorScheme.primary.withOpacity(0.5)),
+                        ),
+                      ],
+                    ),
+                  );
+                })
                 .toList(),
           ),
         ],
 
         const SizedBox(height: 10),
 
-        // 입력 필드
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: const Color(0xFFF8FAFB),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: Row(
             children: [
@@ -183,7 +191,11 @@ class _TagInputState extends State<TagInput> {
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
-                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    hintStyle: TextStyle(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.3)),
                   ),
                   onSubmitted: (_) => _addTag(),
                 ),
@@ -192,8 +204,8 @@ class _TagInputState extends State<TagInput> {
                 padding: const EdgeInsets.only(right: 4),
                 child: IconButton(
                   onPressed: _addTag,
-                  icon: Icon(Icons.add_circle,
-                      color: Colors.green.shade400, size: 26),
+                  icon: Icon(Icons.add_circle_rounded,
+                      color: Theme.of(context).colorScheme.primary, size: 26),
                   tooltip: '태그 추가',
                 ),
               ),

@@ -282,7 +282,7 @@ class _CameraTabScreenState extends ConsumerState<CameraTabScreen>
                   // X 버튼 → 기록 탭으로 전환
                   GestureDetector(
                     onTap: () {
-                      ref.read(bottomNavIndexProvider.notifier).state = 1;
+                      ref.read(bottomNavIndexProvider.notifier).state = 2;
                     },
                     child: Container(
                       width: 40,
@@ -345,7 +345,6 @@ class _CameraTabScreenState extends ConsumerState<CameraTabScreen>
               ),
             ),
 
-          // 하단: 녹화 버튼 (초록)
           Positioned(
             bottom: 40,
             left: 0,
@@ -354,11 +353,18 @@ class _CameraTabScreenState extends ConsumerState<CameraTabScreen>
               child: GestureDetector(
                 onTap: _toggleRecording,
                 child: Container(
-                  width: 72,
-                  height: 72,
+                  width: 76,
+                  height: 76,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF14B8A6).withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: _isRecording
@@ -366,15 +372,22 @@ class _CameraTabScreenState extends ConsumerState<CameraTabScreen>
                             width: 28,
                             height: 28,
                             decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFF14B8A6),
+                              borderRadius: BorderRadius.circular(5),
                             ),
                           )
                         : Container(
-                            width: 56,
-                            height: 56,
+                            width: 60,
+                            height: 60,
                             decoration: const BoxDecoration(
-                              color: Colors.green,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF14B8A6),
+                                  Color(0xFF0D9488),
+                                ],
+                              ),
                               shape: BoxShape.circle,
                             ),
                           ),

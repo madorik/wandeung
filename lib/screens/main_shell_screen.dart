@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/camera_settings_provider.dart';
 import 'camera_tab_screen.dart';
+import 'home_tab_screen.dart';
 import 'records_tab_screen.dart';
+import 'stats_tab_screen.dart';
 
 class MainShellScreen extends ConsumerWidget {
   const MainShellScreen({super.key});
@@ -15,28 +17,46 @@ class MainShellScreen extends ConsumerWidget {
       body: IndexedStack(
         index: currentIndex,
         children: const [
+          HomeTabScreen(),
           CameraTabScreen(),
           RecordsTabScreen(),
+          StatsTabScreen(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) =>
-            ref.read(bottomNavIndexProvider.notifier).state = index,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        height: 60,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.videocam_outlined),
-            selectedIcon: Icon(Icons.videocam),
-            label: '촬영',
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: Color(0xFFE8ECF0), width: 1),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: '캘린더',
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (index) =>
+              ref.read(bottomNavIndexProvider.notifier).state = index,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: '홈',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.videocam_outlined),
+              selectedIcon: Icon(Icons.videocam_rounded),
+              label: '촬영',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month_rounded),
+              label: '캘린더',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bar_chart_outlined),
+              selectedIcon: Icon(Icons.bar_chart_rounded),
+              label: '통계',
+            ),
+          ],
+        ),
       ),
     );
   }

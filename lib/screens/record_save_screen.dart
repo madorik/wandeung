@@ -188,6 +188,9 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
         final focusedMonth = ref.read(focusedMonthProvider);
         ref.invalidate(recordsByDateProvider(selectedDate));
         ref.invalidate(recordCountsByDateProvider(focusedMonth));
+        ref.invalidate(userStatsProvider);
+        ref.invalidate(recentRecordsProvider);
+        ref.invalidate(recentGymsProvider);
         Navigator.pop(context, true);
       }
     } catch (e) {
@@ -248,6 +251,9 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
         final focusedMonth = ref.read(focusedMonthProvider);
         ref.invalidate(recordsByDateProvider(selectedDate));
         ref.invalidate(recordCountsByDateProvider(focusedMonth));
+        ref.invalidate(userStatsProvider);
+        ref.invalidate(recentRecordsProvider);
+        ref.invalidate(recentGymsProvider);
         Navigator.pop(context, true);
       }
     } catch (e) {
@@ -418,9 +424,12 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 암장
-            const Text('암장',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text('암장',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: Theme.of(context).colorScheme.onSurface,
+                )),
             const SizedBox(height: 8),
             if (settings.selectedGym != null || settings.manualGymName != null)
               Container(
@@ -428,14 +437,19 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border.all(color: Colors.green.shade200),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.06),
+                  border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withOpacity(0.2)),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.location_on,
-                        size: 18, color: Colors.green.shade600),
+                    Icon(Icons.location_on_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 10),
                     Expanded(
                       child: GestureDetector(
@@ -450,7 +464,9 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.green.shade800,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface,
                               ),
                             ),
                             if (settings.selectedGym?.address != null)
@@ -460,7 +476,10 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                                   settings.selectedGym!.address!,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.green.shade600,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.45),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -480,7 +499,11 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(left: 8),
                           child: Icon(Icons.map_outlined,
-                              size: 20, color: Colors.green.shade600),
+                              size: 20,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.7)),
                         ),
                       ),
                     GestureDetector(
@@ -489,8 +512,12 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                           .clearGym(),
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8),
-                        child: Icon(Icons.close,
-                            size: 18, color: Colors.grey.shade500),
+                        child: Icon(Icons.close_rounded,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.35)),
                       ),
                     ),
                   ],
@@ -504,20 +531,27 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(12),
+                    color: const Color(0xFFF1F5F9),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.add_location_alt_outlined,
-                          size: 18, color: Colors.grey.shade500),
+                          size: 18,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.35)),
                       const SizedBox(width: 10),
                       Text(
                         '암장을 선택해주세요',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade500,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.35),
                         ),
                       ),
                     ],
@@ -526,35 +560,38 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
               ),
             const SizedBox(height: 16),
 
-            // 완등 여부
-            const Text('완등 여부',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text('완등 여부',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                  color: Theme.of(context).colorScheme.onSurface,
+                )),
             const SizedBox(height: 8),
             Row(
               children: ClimbingStatus.values.map((s) {
                 final isSelected = _status == s;
                 final isCompleted = s == ClimbingStatus.completed;
+                final activeColor = isCompleted
+                    ? const Color(0xFF0D9488)
+                    : const Color(0xFFFF6B35);
                 return Padding(
                   padding: EdgeInsets.only(right: isCompleted ? 8 : 0),
                   child: GestureDetector(
                     onTap: () => setState(() => _status = s),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: const Duration(milliseconds: 180),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                          horizontal: 16, vertical: 9),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? (isCompleted
-                                ? const Color(0xFFEAF5EC)
-                                : const Color(0xFFFFF3E0))
-                            : Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(20),
+                            ? activeColor.withOpacity(0.1)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(22),
                         border: Border.all(
                           color: isSelected
-                              ? (isCompleted
-                                  ? const Color(0xFFA5D6A7)
-                                  : const Color(0xFFFFCC80))
-                              : Colors.grey.shade300,
+                              ? activeColor.withOpacity(0.4)
+                              : const Color(0xFFE2E8F0),
+                          width: isSelected ? 1.5 : 1,
                         ),
                       ),
                       child: Row(
@@ -562,13 +599,14 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                         children: [
                           Icon(
                             isCompleted
-                                ? Icons.check_circle
-                                : Icons.sports_kabaddi,
+                                ? Icons.check_circle_rounded
+                                : Icons.sports_kabaddi_rounded,
                             color: isSelected
-                                ? (isCompleted
-                                    ? const Color(0xFF2E7D32)
-                                    : const Color(0xFFE65100))
-                                : Colors.grey.shade400,
+                                ? activeColor
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.3),
                             size: 18,
                           ),
                           const SizedBox(width: 6),
@@ -580,10 +618,11 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                                   : FontWeight.w400,
                               fontSize: 13,
                               color: isSelected
-                                  ? (isCompleted
-                                      ? const Color(0xFF2E7D32)
-                                      : const Color(0xFFE65100))
-                                  : Colors.grey.shade500,
+                                  ? activeColor
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withOpacity(0.4),
                             ),
                           ),
                         ],
@@ -602,18 +641,18 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 하단 버튼
             Row(
               children: [
                 Expanded(
                   flex: 1,
                   child: OutlinedButton.icon(
                     onPressed: _isSaving ? null : _deleteVideo,
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    label:
-                        const Text('삭제', style: TextStyle(color: Colors.red)),
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        color: Color(0xFFEF4444)),
+                    label: const Text('삭제',
+                        style: TextStyle(color: Color(0xFFEF4444))),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
+                      side: const BorderSide(color: Color(0xFFEF4444)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
@@ -632,9 +671,12 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : Icon(_isEditMode ? Icons.check : Icons.save_alt),
+                        : Icon(_isEditMode
+                            ? Icons.check_rounded
+                            : Icons.save_alt_rounded),
                     label: Text(_isEditMode ? '수정하기' : '저장하기',
-                        style: const TextStyle(fontSize: 16)),
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -674,8 +716,12 @@ class _ExportedVideosList extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.video_library,
-                    size: 18, color: Colors.grey.shade600),
+                Icon(Icons.video_library_rounded,
+                    size: 18,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.5)),
                 const SizedBox(width: 6),
                 Text(
                   '내보내기 영상 (${exports.length})',
@@ -723,9 +769,9 @@ class _ExportedVideoCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: const Color(0xFFF8FAFB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE8ECF0)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -757,14 +803,14 @@ class _ExportedVideoCard extends StatelessWidget {
                           File(record.thumbnailPath!),
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
-                            color: Colors.grey.shade300,
-                            child: const Icon(Icons.movie,
+                            color: const Color(0xFFE2E8F0),
+                            child: const Icon(Icons.movie_rounded,
                                 color: Colors.white, size: 20),
                           ),
                         )
                       : Container(
-                          color: Colors.grey.shade300,
-                          child: const Icon(Icons.movie,
+                          color: const Color(0xFFE2E8F0),
+                          child: const Icon(Icons.movie_rounded,
                               color: Colors.white, size: 20),
                         ),
                 ),
@@ -783,7 +829,11 @@ class _ExportedVideoCard extends StatelessWidget {
                     Text(
                       _formatDate(record.createdAt),
                       style: TextStyle(
-                          fontSize: 12, color: Colors.grey.shade500),
+                          fontSize: 12,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.4)),
                     ),
                   ],
                 ),
@@ -804,15 +854,19 @@ class _ExportedVideoCard extends StatelessWidget {
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, true),
                           child: const Text('삭제',
-                              style: TextStyle(color: Colors.red)),
+                              style: TextStyle(color: Color(0xFFEF4444))),
                         ),
                       ],
                     ),
                   );
                   if (confirmed == true) onDelete();
                 },
-                icon: Icon(Icons.delete_outline,
-                    size: 20, color: Colors.grey.shade400),
+                icon: Icon(Icons.delete_outline_rounded,
+                    size: 20,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.3)),
               ),
             ],
           ),

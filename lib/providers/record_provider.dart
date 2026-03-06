@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/climbing_record.dart';
+import '../models/user_climbing_stats.dart';
 
 final recordsByDateProvider =
     FutureProvider.family<List<ClimbingRecord>, DateTime>((ref, date) async {
@@ -77,6 +78,113 @@ final exportedRecordsProvider =
   return (response as List)
       .map((e) => ClimbingRecord.fromMap(e))
       .toList();
+});
+
+/// 홈 탭 요약 통계 (최근 30일 기준)
+final userStatsProvider = FutureProvider<UserClimbingStats>((ref) async {
+  final userId = SupabaseConfig.client.auth.currentUser!.id;
+  final now = DateTime.now();
+  final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+  final thirtyDaysAgoStr = thirtyDaysAgo.toIso8601String().split('T')[0];
+
+  // 최근 30일 기록만 조회
+  final response = await SupabaseConfig.client
+      .from('climbing_records')
+      .select('id, status, recorded_at')
+      .eq('user_id', userId)
+      .isFilter('parent_record_id', null)
+      .gte('recorded_at', thirtyDaysAgoStr);
+
+  final rows = response as List;
+  final totalClimbs = rows.length;
+  final totalCompleted =
+      rows.where((r) => r['status'] == 'completed').length;
+  final totalInProgress =
+      rows.where((r) => r['status'] == 'in_progress').length;
+  final completionRate =
+      totalClimbs > 0 ? (totalCompleted / totalClimbs * 100) : 0.0;
+  final inProgressRate =
+      totalClimbs > 0 ? (totalInProgress / totalClimbs * 100) : 0.0;
+
+  // 이번 달 등반 횟수
+  final monthlyClimbs = rows.where((r) {
+    final date = DateTime.parse(r['recorded_at']);
+    return date.year == now.year && date.month == now.month;
+  }).length;
+
+  // 연속 등반일수 (streak) — 전체 기록 기준
+  final allResponse = await SupabaseConfig.client
+      .from('climbing_records')
+      .select('recorded_at')
+      .eq('user_id', userId)
+      .isFilter('parent_record_id', null);
+
+  final allDates = (allResponse as List)
+      .map((r) => DateTime.parse(r['recorded_at']))
+      .map((d) => DateTime(d.year, d.month, d.day))
+      .toSet();
+
+  int streak = 0;
+  var checkDate = DateTime(now.year, now.month, now.day);
+  if (!allDates.contains(checkDate)) {
+    checkDate = checkDate.subtract(const Duration(days: 1));
+  }
+  while (allDates.contains(checkDate)) {
+    streak++;
+    checkDate = checkDate.subtract(const Duration(days: 1));
+  }
+
+  return UserClimbingStats(
+    totalClimbs: totalClimbs,
+    totalCompleted: totalCompleted,
+    totalInProgress: totalInProgress,
+    completionRate: completionRate,
+    inProgressRate: inProgressRate,
+    currentStreak: streak,
+    monthlyClimbs: monthlyClimbs,
+  );
+});
+
+/// 홈 탭 최근 기록 (최신 5개)
+final recentRecordsProvider =
+    FutureProvider<List<ClimbingRecord>>((ref) async {
+  final userId = SupabaseConfig.client.auth.currentUser!.id;
+
+  final response = await SupabaseConfig.client
+      .from('climbing_records')
+      .select()
+      .eq('user_id', userId)
+      .isFilter('parent_record_id', null)
+      .order('recorded_at', ascending: false)
+      .order('created_at', ascending: false)
+      .limit(5);
+
+  return (response as List)
+      .map((e) => ClimbingRecord.fromMap(e))
+      .toList();
+});
+
+/// 홈 탭 최근 방문 암장 (최근 기록에서 추출, 중복 제거)
+final recentGymsProvider = FutureProvider<List<String>>((ref) async {
+  final userId = SupabaseConfig.client.auth.currentUser!.id;
+
+  final response = await SupabaseConfig.client
+      .from('climbing_records')
+      .select('gym_name, recorded_at')
+      .eq('user_id', userId)
+      .isFilter('parent_record_id', null)
+      .not('gym_name', 'is', null)
+      .order('recorded_at', ascending: false)
+      .limit(50);
+
+  final seen = <String>{};
+  final gyms = <String>[];
+  for (final row in response as List) {
+    final name = row['gym_name'] as String;
+    if (seen.add(name)) gyms.add(name);
+    if (gyms.length >= 5) break;
+  }
+  return gyms;
 });
 
 class RecordService {

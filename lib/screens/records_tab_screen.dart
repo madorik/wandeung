@@ -85,9 +85,14 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           '완등',
-          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1,
+            fontSize: 22,
+            color: colorScheme.primary,
+          ),
         ),
         centerTitle: false,
         actions: [
@@ -228,7 +233,7 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
               return List.generate(count, (i) => i);
             },
           ),
-          Divider(height: 1, color: colorScheme.outline.withOpacity(0.15)),
+          const Divider(height: 1, color: Color(0xFFE8ECF0)),
           Expanded(
             child: PageView.builder(
               controller: _pageController,
@@ -413,11 +418,10 @@ class _FilterBar extends ConsumerWidget {
                 icon: Icon(
                   Icons.refresh_rounded,
                   size: 18,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 ),
                 style: IconButton.styleFrom(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  backgroundColor: const Color(0xFFF1F5F9),
                   padding: EdgeInsets.zero,
                 ),
               ),

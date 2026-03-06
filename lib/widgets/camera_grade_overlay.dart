@@ -45,7 +45,7 @@ class CameraGradeOverlay extends ConsumerWidget {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _ColorSheet(ref: ref),
     );
@@ -66,14 +66,20 @@ class _ColorSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('난이도 색상',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text('난이도 색상',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 17,
+                letterSpacing: -0.3,
+                color: Theme.of(context).colorScheme.onSurface,
+              )),
           const SizedBox(height: 16),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: 14,
+            runSpacing: 14,
             children: DifficultyColor.values.map((dc) {
               final isSelected = dc == settings.color;
+              final baseColor = Color(dc.colorValue);
               return GestureDetector(
                 onTap: () {
                   ref.read(cameraSettingsProvider.notifier).setColor(dc);
@@ -81,23 +87,34 @@ class _ColorSheet extends StatelessWidget {
                 },
                 child: Column(
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 46,
+                      height: 46,
                       decoration: BoxDecoration(
-                        color: Color(dc.colorValue),
+                        color: baseColor,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.grey.shade300,
-                          width: isSelected ? 3 : 1,
+                              : Colors.black.withOpacity(0.08),
+                          width: isSelected ? 3 : 1.5,
                         ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: baseColor.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: isSelected
-                          ? Icon(Icons.check,
-                              color: dc == DifficultyColor.white
-                                  ? Colors.black
+                          ? Icon(Icons.check_rounded,
+                              color: dc == DifficultyColor.white ||
+                                      dc == DifficultyColor.yellow
+                                  ? Colors.black87
                                   : Colors.white,
                               size: 22)
                           : null,
@@ -108,10 +125,13 @@ class _ColorSheet extends StatelessWidget {
                           fontSize: 11,
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.grey.shade600,
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.5),
                           fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                              ? FontWeight.w600
+                              : FontWeight.w400,
                         )),
                   ],
                 ),

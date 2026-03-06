@@ -46,7 +46,7 @@ class GymSelectionSheet extends ConsumerStatefulWidget {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       isScrollControlled: true,
       builder: (_) => GymSelectionSheet(
@@ -115,8 +115,13 @@ class _GymSelectionSheetState extends ConsumerState<GymSelectionSheet> {
         children: [
           Row(
             children: [
-              const Text('암장 선택',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text('암장 선택',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    letterSpacing: -0.3,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  )),
               const Spacer(),
               TextButton.icon(
                 onPressed: () {
@@ -232,10 +237,13 @@ class _GymSelectionSheetState extends ConsumerState<GymSelectionSheet> {
                                   padding: const EdgeInsets.only(left: 8),
                                   child: Text(
                                     distText,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade600,
-                                    ),
+                    style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(0.4),
+                                  ),
                                   ),
                                 ),
                               if (isSelected)

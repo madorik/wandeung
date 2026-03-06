@@ -59,6 +59,7 @@ dependencies:
   cross_file: ^0.3.4+2
   file_picker: ^8.0.0
   shared_preferences: ^2.3.0
+  fl_chart: 0.68.0
 
 dev_dependencies:
   flutter_test:

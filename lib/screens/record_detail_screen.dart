@@ -168,15 +168,17 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                 !File(record.videoPath!).existsSync())
               Container(
                 height: 200,
-                color: Colors.grey.shade200,
-                child: const Center(
+                color: const Color(0xFFE8ECF0),
+                child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.videocam_off, size: 48, color: Colors.grey),
-                      SizedBox(height: 8),
+                      Icon(Icons.videocam_off_rounded, size: 48,
+                          color: colorScheme.onSurface.withOpacity(0.25)),
+                      const SizedBox(height: 8),
                       Text('영상 파일이 삭제되었습니다',
-                          style: TextStyle(color: Colors.grey)),
+                          style: TextStyle(
+                              color: colorScheme.onSurface.withOpacity(0.4))),
                     ],
                   ),
                 ),
@@ -192,20 +194,26 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 난이도 + 색상 + 상태
                   Row(
                     children: [
                       Container(
-                        width: 52,
-                        height: 52,
+                        width: 54,
+                        height: 54,
                         decoration: BoxDecoration(
-                          color: Color(color.colorValue),
-                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(color.colorValue),
+                              Color(color.colorValue).withOpacity(0.85),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
                               color: Color(color.colorValue).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
@@ -214,7 +222,7 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                             record.grade.toUpperCase(),
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontSize: 17,
                               color: color == DifficultyColor.white
                                   ? Colors.black87
                                   : Colors.white,
@@ -229,15 +237,17 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                           Text(
                             color.korean,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: 17,
                               fontWeight: FontWeight.w600,
+                              letterSpacing: -0.3,
                             ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             record.grade.toUpperCase(),
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withOpacity(0.45),
+                              color: colorScheme.onSurface.withOpacity(0.4),
                             ),
                           ),
                         ],
@@ -245,27 +255,37 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                       const Spacer(),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                            horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
                           color: isCompleted
-                              ? const Color(0xFFEAF5EC)
-                              : const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isCompleted
-                                ? const Color(0xFFA5D6A7)
-                                : const Color(0xFFFFCC80),
-                          ),
+                              ? const Color(0xFF14B8A6).withOpacity(0.1)
+                              : const Color(0xFFFF6B35).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(22),
                         ),
-                        child: Text(
-                          isCompleted ? '완등' : '도전중',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: isCompleted
-                                ? const Color(0xFF2E7D32)
-                                : const Color(0xFFE65100),
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isCompleted
+                                  ? Icons.check_circle_rounded
+                                  : Icons.sports_kabaddi_rounded,
+                              size: 16,
+                              color: isCompleted
+                                  ? const Color(0xFF0D9488)
+                                  : const Color(0xFFE65100),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              isCompleted ? '완등' : '도전중',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isCompleted
+                                    ? const Color(0xFF0D9488)
+                                    : const Color(0xFFE65100),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

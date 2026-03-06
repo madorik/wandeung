@@ -1,0 +1,557 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/user_climbing_stats.dart';
+import '../providers/camera_settings_provider.dart';
+import '../providers/record_provider.dart';
+import '../widgets/record_card.dart';
+import '../widgets/stat_card.dart';
+
+class HomeTabScreen extends ConsumerWidget {
+  const HomeTabScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(userStatsProvider);
+    final recentAsync = ref.watch(recentRecordsProvider);
+    final gymsAsync = ref.watch(recentGymsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(userStatsProvider);
+          ref.invalidate(recentRecordsProvider);
+          ref.invalidate(recentGymsProvider);
+        },
+        child: CustomScrollView(
+          slivers: [
+            // 헤더
+            SliverToBoxAdapter(
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              colorScheme.primary,
+                              colorScheme.primary.withOpacity(0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(13),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colorScheme.primary.withOpacity(0.25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.terrain_rounded,
+                          size: 22,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '완등',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: colorScheme.primary,
+                          letterSpacing: -1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // 요약 통계
+            SliverToBoxAdapter(
+              child: statsAsync.when(
+                data: (stats) => _StatsSection(stats: stats),
+                loading: () => const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text('통계를 불러올 수 없습니다'),
+                ),
+              ),
+            ),
+
+            // 최근 방문 암장
+            SliverToBoxAdapter(
+              child: gymsAsync.whenOrNull(
+                    data: (gyms) =>
+                        gyms.isNotEmpty ? _RecentGymsSection(gyms: gyms) : null,
+                  ) ??
+                  const SizedBox.shrink(),
+            ),
+
+            // 최근 기록 헤더
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 12, 12),
+                child: Row(
+                  children: [
+                    Text(
+                      '최근 기록',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const Spacer(),
+                    recentAsync.whenOrNull(
+                          data: (records) => records.isNotEmpty
+                              ? TextButton(
+                                  onPressed: () {
+                                    ref
+                                        .read(
+                                            bottomNavIndexProvider.notifier)
+                                        .state = 2;
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '더보기',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right_rounded,
+                                        size: 18,
+                                        color: colorScheme.primary,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : null,
+                        ) ??
+                        const SizedBox.shrink(),
+                  ],
+                ),
+              ),
+            ),
+
+            // 최근 기록 리스트
+            recentAsync.when(
+              data: (records) {
+                if (records.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 48),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest
+                                    .withOpacity(0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.terrain_outlined,
+                                size: 32,
+                                color:
+                                    colorScheme.onSurface.withOpacity(0.25),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              '아직 기록이 없어요',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    colorScheme.onSurface.withOpacity(0.35),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '첫 등반을 기록해보세요!',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color:
+                                    colorScheme.onSurface.withOpacity(0.25),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList.separated(
+                    itemCount: records.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 2),
+                    itemBuilder: (_, i) => RecordCard(record: records[i]),
+                  ),
+                );
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ),
+              error: (e, _) => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(child: Text('기록을 불러올 수 없습니다')),
+                ),
+              ),
+            ),
+
+            // 하단 여백
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 24),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentGymsSection extends StatelessWidget {
+  final List<String> gyms;
+  const _RecentGymsSection({required this.gyms});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 10),
+            child: Text(
+              '최근 방문 암장',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 38,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: gyms.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) => Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE8ECF0)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.location_on_outlined,
+                      size: 15,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      gyms[i],
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatsSection extends StatelessWidget {
+  final UserClimbingStats stats;
+  const _StatsSection({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    const completedColor = Color(0xFF4ADE80);
+    const inProgressColor = Color(0xFFFBBF24);
+
+    final completedRatio = stats.totalClimbs > 0
+        ? stats.totalCompleted / stats.totalClimbs
+        : 0.0;
+    final inProgressRatio = stats.totalClimbs > 0
+        ? stats.totalInProgress / stats.totalClimbs
+        : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  colorScheme.primary,
+                  colorScheme.primary.withOpacity(0.85),
+                  const Color(0xFF0D9488),
+                ],
+                stops: const [0.0, 0.6, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '최근 30일',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: colorScheme.onPrimary.withOpacity(0.7),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.onPrimary.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '총 ${stats.totalClimbs}건',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onPrimary.withOpacity(0.8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _RateDisplay(
+                        label: '완등',
+                        rate: stats.completionRate,
+                        count: stats.totalCompleted,
+                        color: completedColor,
+                        onPrimaryColor: colorScheme.onPrimary,
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 48,
+                      color: colorScheme.onPrimary.withOpacity(0.2),
+                    ),
+                    Expanded(
+                      child: _RateDisplay(
+                        label: '도전중',
+                        rate: stats.inProgressRate,
+                        count: stats.totalInProgress,
+                        color: inProgressColor,
+                        onPrimaryColor: colorScheme.onPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // 세그먼트 프로그레스 바
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: SizedBox(
+                    height: 6,
+                    child: Row(
+                      children: [
+                        if (completedRatio > 0)
+                          Expanded(
+                            flex: (completedRatio * 1000).round(),
+                            child: Container(color: completedColor),
+                          ),
+                        if (inProgressRatio > 0)
+                          Expanded(
+                            flex: (inProgressRatio * 1000).round(),
+                            child: Container(color: inProgressColor),
+                          ),
+                        if ((1 - completedRatio - inProgressRatio) > 0)
+                          Expanded(
+                            flex: ((1 - completedRatio - inProgressRatio) * 1000).round(),
+                            child: Container(
+                              color: colorScheme.onPrimary.withOpacity(0.15),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  icon: Icons.fitness_center_rounded,
+                  label: '30일 등반',
+                  value: '${stats.totalClimbs}',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: StatCard(
+                  icon: Icons.local_fire_department_rounded,
+                  label: '연속 등반',
+                  value: '${stats.currentStreak}일',
+                  accentColor: const Color(0xFFFF6B35),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: StatCard(
+                  icon: Icons.calendar_today_rounded,
+                  label: '이번 달',
+                  value: '${stats.monthlyClimbs}',
+                  accentColor: const Color(0xFF3B82F6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RateDisplay extends StatelessWidget {
+  final String label;
+  final double rate;
+  final int count;
+  final Color color;
+  final Color onPrimaryColor;
+
+  const _RateDisplay({
+    required this.label,
+    required this.rate,
+    required this.count,
+    required this.color,
+    required this.onPrimaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              rate.toStringAsFixed(0),
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                color: onPrimaryColor,
+                height: 1,
+                letterSpacing: -1.5,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4, left: 1),
+              child: Text(
+                '%',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: onPrimaryColor.withOpacity(0.6),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$label ${count}건',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: onPrimaryColor.withOpacity(0.7),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}

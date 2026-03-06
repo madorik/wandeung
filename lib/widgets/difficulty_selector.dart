@@ -13,44 +13,71 @@ class DifficultySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('난이도 색상',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        const SizedBox(height: 8),
+        Text('난이도 색상',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: colorScheme.onSurface,
+            )),
+        const SizedBox(height: 12),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 14,
+          runSpacing: 14,
           children: DifficultyColor.values.map((dc) {
             final isSelected = dc == selectedColor;
+            final baseColor = Color(dc.colorValue);
             return GestureDetector(
               onTap: () => onColorChanged(dc),
               child: Column(
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
-                      color: Color(dc.colorValue),
+                      color: baseColor,
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.grey.shade300,
-                        width: isSelected ? 3 : 1,
+                            ? colorScheme.primary
+                            : Colors.black.withOpacity(0.08),
+                        width: isSelected ? 3 : 1.5,
                       ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: baseColor.withOpacity(0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: isSelected
-                        ? Icon(Icons.check,
-                            color: dc == DifficultyColor.white
-                                ? Colors.black
+                        ? Icon(Icons.check_rounded,
+                            color: dc == DifficultyColor.white ||
+                                    dc == DifficultyColor.yellow
+                                ? Colors.black87
                                 : Colors.white,
                             size: 20)
                         : null,
                   ),
-                  const SizedBox(height: 2),
-                  Text(dc.korean, style: const TextStyle(fontSize: 10)),
+                  const SizedBox(height: 4),
+                  Text(
+                    dc.korean,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
                 ],
               ),
             );
