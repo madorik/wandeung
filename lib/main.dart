@@ -11,15 +11,24 @@ void main() async {
   await dotenv.load();
   await SupabaseConfig.initialize();
 
-  // FFmpeg drawtext용 시스템 폰트 디렉토리 등록
-  await FFmpegKitConfig.setFontDirectory('/system/fonts');
+  // FFmpeg drawtext용 시스템 폰트 디렉토리 등록 (실패해도 앱 구동에 영향 없음)
+  try {
+    await FFmpegKitConfig.setFontDirectory('/system/fonts');
+  } catch (e) {
+    debugPrint('FFmpegKit font directory 설정 실패: $e');
+  }
 
-  final naverMapClientId = dotenv.env['NAVER_MAP_CLIENT_ID'] ?? '';
-  if (naverMapClientId.isNotEmpty) {
-    await FlutterNaverMap().init(
-      clientId: naverMapClientId,
-      onAuthFailed: (ex) => debugPrint('네이버 지도 인증 실패: $ex'),
-    );
+  // 네이버 지도 초기화 (실패해도 앱 구동에 영향 없음)
+  try {
+    final naverMapClientId = dotenv.env['NAVER_MAP_CLIENT_ID'] ?? '';
+    if (naverMapClientId.isNotEmpty) {
+      await FlutterNaverMap().init(
+        clientId: naverMapClientId,
+        onAuthFailed: (ex) => debugPrint('네이버 지도 인증 실패: $ex'),
+      );
+    }
+  } catch (e) {
+    debugPrint('네이버 지도 초기화 실패: $e');
   }
 
   runApp(const ProviderScope(child: WandeungApp()));

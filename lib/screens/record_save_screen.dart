@@ -10,7 +10,8 @@ import '../providers/camera_settings_provider.dart';
 import '../providers/record_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/difficulty_selector.dart';
-import '../widgets/gym_selector.dart';
+import '../widgets/gym_selection_sheet.dart';
+import '../widgets/gym_map_sheet.dart';
 import '../widgets/tag_input.dart';
 import '../utils/thumbnail_utils.dart';
 import 'records_tab_screen.dart';
@@ -260,6 +261,21 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
     }
   }
 
+  void _showGymSelection(BuildContext context, WidgetRef ref) {
+    final settings = ref.read(cameraSettingsProvider);
+    GymSelectionSheet.show(
+      context,
+      currentGym: settings.selectedGym,
+      currentManualName: settings.manualGymName,
+      onGymSelected: (gym) {
+        ref.read(cameraSettingsProvider.notifier).setGym(gym);
+      },
+      onManualInput: (name) {
+        ref.read(cameraSettingsProvider.notifier).setManualGymName(name);
+      },
+    );
+  }
+
   Future<void> _saveToGallery() async {
     try {
       await Gal.putVideo(widget.videoPath!, album: '완등');
@@ -422,39 +438,91 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                         size: 18, color: Colors.green.shade600),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        settings.selectedGym?.name ??
-                            settings.manualGymName ??
-                            '',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green.shade800,
+                      child: GestureDetector(
+                        onTap: () => _showGymSelection(context, ref),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              settings.selectedGym?.name ??
+                                  settings.manualGymName ??
+                                  '',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.green.shade800,
+                              ),
+                            ),
+                            if (settings.selectedGym?.address != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  settings.selectedGym!.address!,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green.shade600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
+                    if (settings.selectedGym?.latitude != null &&
+                        settings.selectedGym?.longitude != null)
+                      GestureDetector(
+                        onTap: () => GymMapSheet.show(
+                          context,
+                          selectedGym: settings.selectedGym!,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Icon(Icons.map_outlined,
+                              size: 20, color: Colors.green.shade600),
+                        ),
+                      ),
                     GestureDetector(
                       onTap: () => ref
                           .read(cameraSettingsProvider.notifier)
                           .clearGym(),
-                      child: Icon(Icons.close,
-                          size: 18, color: Colors.grey.shade500),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Icon(Icons.close,
+                            size: 18, color: Colors.grey.shade500),
+                      ),
                     ),
                   ],
                 ),
               )
             else
-              GymSelector(
-                selectedGym: null,
-                manualGymName: null,
-                onGymSelected: (gym) {
-                  if (gym != null) {
-                    ref.read(cameraSettingsProvider.notifier).setGym(gym);
-                  }
-                },
-                onManualInput: (name) => ref
-                    .read(cameraSettingsProvider.notifier)
-                    .setManualGymName(name),
+              GestureDetector(
+                onTap: () => _showGymSelection(context, ref),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.add_location_alt_outlined,
+                          size: 18, color: Colors.grey.shade500),
+                      const SizedBox(width: 10),
+                      Text(
+                        '암장을 선택해주세요',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             const SizedBox(height: 16),
 
