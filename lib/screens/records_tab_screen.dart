@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/climbing_record.dart';
-import '../providers/auth_provider.dart';
 import '../providers/record_provider.dart';
 import '../utils/constants.dart';
 import '../widgets/record_card.dart';
+import '../widgets/wandeung_app_bar.dart';
 
 final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final focusedMonthProvider = StateProvider<DateTime>((ref) => DateTime.now());
@@ -84,48 +84,7 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '완등',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1,
-            fontSize: 22,
-            color: colorScheme.primary,
-          ),
-        ),
-        centerTitle: false,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') {
-                ref.read(authProvider.notifier).signOut();
-              }
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem<String>(
-                value: 'logout',
-                child: Text('로그아웃'),
-              ),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: () {
-                final user = ref.watch(authProvider).valueOrNull;
-                final photoUrl = user?.userMetadata?['picture'] as String?;
-                return CircleAvatar(
-                  radius: 16,
-                  backgroundImage:
-                      photoUrl != null ? NetworkImage(photoUrl) : null,
-                  child: photoUrl == null
-                      ? const Icon(Icons.person, size: 18)
-                      : null,
-                );
-              }(),
-            ),
-          ),
-        ],
-      ),
+      appBar: const WandeungAppBar(),
       body: Column(
         children: [
           TableCalendar(

@@ -5,7 +5,6 @@ import 'package:video_player/video_player.dart';
 import 'package:gal/gal.dart';
 import '../config/supabase_config.dart';
 import '../models/climbing_record.dart';
-import '../providers/auth_provider.dart';
 import '../providers/camera_settings_provider.dart';
 import '../providers/record_provider.dart';
 import '../utils/constants.dart';
@@ -13,6 +12,7 @@ import '../widgets/difficulty_selector.dart';
 import '../widgets/gym_selection_sheet.dart';
 import '../widgets/gym_map_sheet.dart';
 import '../widgets/tag_input.dart';
+import '../widgets/wandeung_app_bar.dart';
 import '../utils/thumbnail_utils.dart';
 import 'records_tab_screen.dart';
 import 'video_editor_screen.dart';
@@ -293,29 +293,9 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
     final settings = ref.watch(cameraSettingsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(),
-        title: _isEditMode
-            ? const Text('기록 편집',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18))
-            : null,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: () {
-              final user = ref.watch(authProvider).valueOrNull;
-              final photoUrl = user?.userMetadata?['picture'] as String?;
-              return CircleAvatar(
-                radius: 16,
-                backgroundImage:
-                    photoUrl != null ? NetworkImage(photoUrl) : null,
-                child: photoUrl == null
-                    ? const Icon(Icons.person, size: 18)
-                    : null,
-              );
-            }(),
-          ),
-        ],
+      appBar: WandeungAppBar(
+        title: _isEditMode ? '기록 편집' : '기록 저장',
+        showBackButton: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

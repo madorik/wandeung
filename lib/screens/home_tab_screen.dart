@@ -5,6 +5,7 @@ import '../providers/camera_settings_provider.dart';
 import '../providers/record_provider.dart';
 import '../widgets/record_card.dart';
 import '../widgets/stat_card.dart';
+import '../widgets/wandeung_app_bar.dart';
 
 class HomeTabScreen extends ConsumerWidget {
   const HomeTabScreen({super.key});
@@ -17,6 +18,7 @@ class HomeTabScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: const WandeungAppBar(),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(userStatsProvider);
@@ -25,57 +27,6 @@ class HomeTabScreen extends ConsumerWidget {
         },
         child: CustomScrollView(
           slivers: [
-            // 헤더
-            SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colorScheme.primary,
-                              colorScheme.primary.withOpacity(0.8),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(13),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colorScheme.primary.withOpacity(0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.terrain_rounded,
-                          size: 22,
-                          color: colorScheme.onPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '완등',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.primary,
-                          letterSpacing: -1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
             // 요약 통계
             SliverToBoxAdapter(
               child: statsAsync.when(

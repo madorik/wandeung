@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import '../config/supabase_config.dart';
 import '../models/climbing_record.dart';
 import '../utils/constants.dart';
+import '../widgets/wandeung_app_bar.dart';
 import 'video_editor_screen.dart';
 
 class RecordDetailScreen extends StatefulWidget {
@@ -109,12 +110,10 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     final isCompleted = record.status == 'completed';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          record.gymName ?? '등반 기록',
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        actions: [
+      appBar: WandeungAppBar(
+        title: record.gymName ?? '등반 기록',
+        showBackButton: true,
+        extraActions: [
           if (record.videoPath != null)
             IconButton(
               onPressed: () {

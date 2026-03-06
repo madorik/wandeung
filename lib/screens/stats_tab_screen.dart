@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/stats_provider.dart';
+import '../widgets/wandeung_app_bar.dart';
 
 class StatsTabScreen extends ConsumerWidget {
   const StatsTabScreen({super.key});
@@ -15,27 +16,11 @@ class StatsTabScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: const WandeungAppBar(),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(periodStatsProvider),
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                  child: Text(
-                    '통계',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: colorScheme.onSurface,
-                      letterSpacing: -1.5,
-                    ),
-                  ),
-                ),
-              ),
-            ),
             SliverToBoxAdapter(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
