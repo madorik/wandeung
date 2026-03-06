@@ -12,32 +12,26 @@ final focusedMonthProvider = StateProvider<DateTime>((ref) => DateTime.now());
 final calendarFormatProvider =
     StateProvider<CalendarFormat>((ref) => CalendarFormat.month);
 
-// 필터 상태 (카테고리별 단일 선택)
-final selectedColorFilterProvider = StateProvider<String?>((ref) => null);
-final selectedStatusFilterProvider = StateProvider<String?>((ref) => null);
-final selectedTagFilterProvider = StateProvider<String?>((ref) => null);
 
 List<ClimbingRecord> _applyFilters(
   List<ClimbingRecord> records,
   String? color,
   String? status,
   String? tag,
+  String? gymName,
 ) {
-  if (color == null && status == null && tag == null) {
+  if (color == null && status == null && tag == null && gymName == null) {
     return records;
   }
   return records.where((r) {
     if (color != null && r.difficultyColor != color) return false;
     if (status != null && r.status != status) return false;
     if (tag != null && !r.tags.contains(tag)) return false;
+    if (gymName != null && r.gymName != gymName) return false;
     return true;
   }).toList();
 }
 
-bool _hasFilterableOptions(List<ClimbingRecord> records) {
-  if (records.expand((r) => r.tags).toSet().length >= 2) return true;
-  return false;
-}
 
 class RecordsTabScreen extends ConsumerStatefulWidget {
   const RecordsTabScreen({super.key});
@@ -67,6 +61,7 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
     ref.read(selectedColorFilterProvider.notifier).state = null;
     ref.read(selectedStatusFilterProvider.notifier).state = null;
     ref.read(selectedTagFilterProvider.notifier).state = null;
+    ref.read(selectedGymFilterProvider.notifier).state = null;
   }
 
   @override
@@ -79,6 +74,7 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
     final selectedColor = ref.watch(selectedColorFilterProvider);
     final selectedStatus = ref.watch(selectedStatusFilterProvider);
     final selectedTag = ref.watch(selectedTagFilterProvider);
+    final selectedGym = ref.watch(selectedGymFilterProvider);
 
     final calendarFormat = ref.watch(calendarFormatProvider);
     final colorScheme = Theme.of(context).colorScheme;
@@ -87,6 +83,7 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
       appBar: const WandeungAppBar(),
       body: Column(
         children: [
+          const _FilterBar(),
           TableCalendar(
             firstDay: DateTime(2020),
             lastDay: DateTime(2030),
@@ -236,50 +233,44 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
                     }
 
                     final filtered = _applyFilters(
-                        list, selectedColor, selectedStatus, selectedTag);
+                        list, selectedColor, selectedStatus, selectedTag, selectedGym);
                     final hasActiveFilters = selectedColor != null ||
                         selectedStatus != null ||
-                        selectedTag != null;
-                    return Column(
-                      children: [
-                        _FilterBar(records: list),
-                        Expanded(
-                          child: filtered.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.filter_list_off_rounded,
-                                          size: 40,
-                                          color: colorScheme.onSurface
-                                              .withOpacity(0.2)),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        '필터 조건에 맞는 기록이 없습니다',
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            color: colorScheme.onSurface
-                                                .withOpacity(0.4)),
-                                      ),
-                                      if (hasActiveFilters) ...[
-                                        const SizedBox(height: 12),
-                                        TextButton(
-                                          onPressed: () => _resetFilters(ref),
-                                          child: const Text('필터 초기화'),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.fromLTRB(
-                                      16, 12, 16, 16),
-                                  itemCount: filtered.length,
-                                  itemBuilder: (_, i) =>
-                                      RecordCard(record: filtered[i]),
-                                ),
+                        selectedTag != null ||
+                        selectedGym != null;
+                    if (filtered.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.filter_list_off_rounded,
+                                size: 40,
+                                color: colorScheme.onSurface
+                                    .withOpacity(0.2)),
+                            const SizedBox(height: 10),
+                            Text(
+                              '필터 조건에 맞는 기록이 없습니다',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: colorScheme.onSurface
+                                      .withOpacity(0.4)),
+                            ),
+                            if (hasActiveFilters) ...[
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: () => _resetFilters(ref),
+                                child: const Text('필터 초기화'),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) =>
+                          RecordCard(record: filtered[i]),
                     );
                   },
                   loading: () =>
@@ -298,23 +289,44 @@ class _RecordsTabScreenState extends ConsumerState<RecordsTabScreen> {
 // ─── 필터 바 ───────────────────────────────────────────────────────────────────
 
 class _FilterBar extends ConsumerWidget {
-  final List<ClimbingRecord> records;
-  const _FilterBar({required this.records});
+  const _FilterBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedColor = ref.watch(selectedColorFilterProvider);
     final selectedStatus = ref.watch(selectedStatusFilterProvider);
     final selectedTag = ref.watch(selectedTagFilterProvider);
+    final selectedGym = ref.watch(selectedGymFilterProvider);
 
+    final selectedDate = ref.watch(selectedDateProvider);
+    final recordsAsync = ref.watch(recordsByDateProvider(selectedDate));
+    final records = recordsAsync.valueOrNull ?? [];
     final availableTags = records.expand((r) => r.tags).toSet().toList()..sort();
+
+    final visitedGymsAsync = ref.watch(userVisitedGymsProvider);
+    final visitedGyms = visitedGymsAsync.valueOrNull ?? [];
 
     final activeDc = selectedColor != null
         ? DifficultyColor.values.firstWhere((c) => c.name == selectedColor)
         : null;
 
+    final hasActiveFilters = selectedColor != null ||
+        selectedStatus != null ||
+        selectedTag != null ||
+        selectedGym != null;
+
     final boxes = <Widget>[
-      // 상태 (항상 표시)
+      if (visitedGyms.isNotEmpty)
+        _SelectBox(
+          label: '암장',
+          selectedValue: selectedGym,
+          selectedDisplay: selectedGym,
+          items: visitedGyms
+              .map((g) => _SelectItem(value: g, child: Text(g)))
+              .toList(),
+          onChanged: (v) =>
+              ref.read(selectedGymFilterProvider.notifier).state = v,
+        ),
       _SelectBox(
         label: '상태',
         selectedValue: selectedStatus,
@@ -326,7 +338,6 @@ class _FilterBar extends ConsumerWidget {
             .toList(),
         onChanged: (v) => ref.read(selectedStatusFilterProvider.notifier).state = v,
       ),
-      // 난이도 색상 (항상 표시)
       _SelectBox(
         label: '난이도',
         selectedValue: selectedColor,
@@ -360,32 +371,36 @@ class _FilterBar extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ...boxes.expand((b) => [b, const SizedBox(width: 8)]),
-          SizedBox(
-              width: 32,
-              height: 32,
-              child: IconButton(
-                onPressed: () {
-                  ref.read(selectedColorFilterProvider.notifier).state = null;
-                  ref.read(selectedStatusFilterProvider.notifier).state = null;
-                  ref.read(selectedTagFilterProvider.notifier).state = null;
-                },
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  size: 18,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: const Color(0xFFF1F5F9),
-                  padding: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            ...boxes.expand((b) => [b, const SizedBox(width: 8)]),
+            if (hasActiveFilters)
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: IconButton(
+                  onPressed: () {
+                    ref.read(selectedColorFilterProvider.notifier).state = null;
+                    ref.read(selectedStatusFilterProvider.notifier).state = null;
+                    ref.read(selectedTagFilterProvider.notifier).state = null;
+                    ref.read(selectedGymFilterProvider.notifier).state = null;
+                  },
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    padding: EdgeInsets.zero,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

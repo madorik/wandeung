@@ -4,6 +4,12 @@ import '../config/supabase_config.dart';
 import '../models/climbing_record.dart';
 import '../models/user_climbing_stats.dart';
 
+// 필터 상태 (카테고리별 단일 선택)
+final selectedColorFilterProvider = StateProvider<String?>((ref) => null);
+final selectedStatusFilterProvider = StateProvider<String?>((ref) => null);
+final selectedTagFilterProvider = StateProvider<String?>((ref) => null);
+final selectedGymFilterProvider = StateProvider<String?>((ref) => null);
+
 final recordsByDateProvider =
     FutureProvider.family<List<ClimbingRecord>, DateTime>((ref, date) async {
   final userId = SupabaseConfig.client.auth.currentUser!.id;
@@ -42,16 +48,21 @@ final recordDatesProvider =
       .toSet();
 });
 
-/// 캘린더 배지용: 월별 날짜 → 기록 개수 맵
+/// 캘린더 배지용: 월별 날짜 → 필터 적용된 기록 개수 맵
 final recordCountsByDateProvider =
     FutureProvider.family<Map<DateTime, int>, DateTime>((ref, month) async {
+  final color = ref.watch(selectedColorFilterProvider);
+  final status = ref.watch(selectedStatusFilterProvider);
+  final tag = ref.watch(selectedTagFilterProvider);
+  final gymName = ref.watch(selectedGymFilterProvider);
+
   final userId = SupabaseConfig.client.auth.currentUser!.id;
   final firstDay = DateTime(month.year, month.month, 1);
   final lastDay = DateTime(month.year, month.month + 1, 0);
 
   final response = await SupabaseConfig.client
       .from('climbing_records')
-      .select('recorded_at')
+      .select('recorded_at, status, difficulty_color, gym_name, tags')
       .eq('user_id', userId)
       .gte('recorded_at', firstDay.toIso8601String().split('T')[0])
       .lte('recorded_at', lastDay.toIso8601String().split('T')[0])
@@ -59,6 +70,14 @@ final recordCountsByDateProvider =
 
   final counts = <DateTime, int>{};
   for (final row in response as List) {
+    if (color != null && row['difficulty_color'] != color) continue;
+    if (status != null && row['status'] != status) continue;
+    if (gymName != null && row['gym_name'] != gymName) continue;
+    if (tag != null) {
+      final tags = (row['tags'] as List?)?.cast<String>() ?? [];
+      if (!tags.contains(tag)) continue;
+    }
+
     final date = DateTime.parse(row['recorded_at']);
     final normalized = DateTime(date.year, date.month, date.day);
     counts[normalized] = (counts[normalized] ?? 0) + 1;
@@ -184,6 +203,26 @@ final recentGymsProvider = FutureProvider<List<String>>((ref) async {
     if (seen.add(name)) gyms.add(name);
     if (gyms.length >= 5) break;
   }
+  return gyms;
+});
+
+/// 사용자가 방문한 모든 암장 이름 (필터용)
+final userVisitedGymsProvider = FutureProvider<List<String>>((ref) async {
+  final userId = SupabaseConfig.client.auth.currentUser!.id;
+
+  final response = await SupabaseConfig.client
+      .from('climbing_records')
+      .select('gym_name')
+      .eq('user_id', userId)
+      .isFilter('parent_record_id', null)
+      .not('gym_name', 'is', null);
+
+  final gyms = (response as List)
+      .map((e) => e['gym_name'] as String)
+      .toSet()
+      .toList()
+    ..sort();
+
   return gyms;
 });
 
