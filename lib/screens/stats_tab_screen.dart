@@ -697,8 +697,6 @@ class _GymSection extends StatelessWidget {
     if (allGymStats.isEmpty) return const SizedBox.shrink();
 
     final gymStats = allGymStats.take(5).toList();
-    final maxTotal =
-        gymStats.map((g) => g.total).fold<int>(1, (a, b) => max(a, b));
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -723,9 +721,10 @@ class _GymSection extends StatelessWidget {
             const SizedBox(height: 16),
             ...gymStats.map((gym) {
               final diff = gym.total - gym.prevTotal;
-              final barFraction = gym.total / maxTotal;
               final completedFraction =
                   gym.total > 0 ? gym.completed / gym.total : 0.0;
+              final inProgressFraction =
+                  gym.total > 0 ? (gym.total - gym.completed) / gym.total : 0.0;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -767,44 +766,24 @@ class _GymSection extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    SizedBox(
-                      height: 8,
-                      child: Stack(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          FractionallySizedBox(
-                            widthFactor: barFraction,
-                            child: Stack(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFBBF24),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                FractionallySizedBox(
-                                  widthFactor: completedFraction,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF4ADE80),
-                                      borderRadius: completedFraction >= 1.0
-                                          ? BorderRadius.circular(4)
-                                          : const BorderRadius.only(
-                                              topLeft: Radius.circular(4),
-                                              bottomLeft: Radius.circular(4),
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: SizedBox(
+                        height: 8,
+                        child: Row(
+                          children: [
+                            if (completedFraction > 0)
+                              Expanded(
+                                flex: (completedFraction * 1000).round(),
+                                child: Container(color: const Color(0xFF4ADE80)),
+                              ),
+                            if (inProgressFraction > 0)
+                              Expanded(
+                                flex: (inProgressFraction * 1000).round(),
+                                child: Container(color: const Color(0xFFFBBF24)),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
