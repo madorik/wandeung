@@ -42,10 +42,20 @@ class MainActivity : FlutterActivity() {
         )
 
         for ((name, factory) in plugins) {
+            var plugin: FlutterPlugin? = null
             try {
-                flutterEngine.plugins.add(factory())
+                plugin = factory()
+                flutterEngine.plugins.add(plugin)
             } catch (t: Throwable) {
                 Log.e(TAG, "Error registering plugin $name", t)
+                // If onAttachedToEngine succeeded but onAttachedToActivity failed,
+                // the method channel is left in a broken state. Remove the plugin
+                // so Dart gets MissingPluginException instead of a fatal Error.
+                if (plugin != null) {
+                    try {
+                        flutterEngine.plugins.remove(plugin.javaClass)
+                    } catch (_: Throwable) {}
+                }
             }
         }
     }
