@@ -489,16 +489,7 @@ class _SelectBox extends StatelessWidget {
               selectedLeading!,
               const SizedBox(width: 6),
             ],
-            Text(
-              isActive ? '$label: ${selectedDisplay!}' : label,
-              style: TextStyle(
-                fontSize: 13,
-                color: isActive
-                    ? colorScheme.onPrimaryContainer
-                    : colorScheme.onSurface.withOpacity(0.75),
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
+            _buildLabel(context, isActive, colorScheme),
             const SizedBox(width: 2),
             Icon(
               Icons.keyboard_arrow_down_rounded,
@@ -509,6 +500,101 @@ class _SelectBox extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(BuildContext context, bool isActive, ColorScheme colorScheme) {
+    final text = isActive ? selectedDisplay! : label;
+    final style = TextStyle(
+      fontSize: 13,
+      color: isActive
+          ? colorScheme.onPrimaryContainer
+          : colorScheme.onSurface.withOpacity(0.75),
+      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+    );
+
+    if (isActive && text.length > 7) {
+      return SizedBox(
+        width: 7 * style.fontSize! * 0.65,
+        height: style.fontSize! * 1.4,
+        child: _MarqueeText(text: text, style: style),
+      );
+    }
+
+    return Text(text, style: style);
+  }
+}
+
+class _MarqueeText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+
+  const _MarqueeText({required this.text, required this.style});
+
+  @override
+  State<_MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<_MarqueeText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  double _textWidth = 0;
+  double _containerWidth = 0;
+  final _textKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+  }
+
+  void _measure() {
+    if (!mounted) return;
+    final box = _textKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    _textWidth = box.size.width;
+    _containerWidth = (context.findRenderObject() as RenderBox).size.width;
+    if (_textWidth <= _containerWidth) return;
+
+    final totalScroll = _textWidth + 40; // 40 = gap between repeated text
+    _controller.duration =
+        Duration(milliseconds: (totalScroll * 30).toInt());
+    _controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const gap = 40.0;
+    return ClipRect(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final offset = _controller.value * (_textWidth + gap);
+          return Stack(
+            children: [
+              Transform.translate(
+                offset: Offset(-offset, 0),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(key: _textKey, widget.text,
+                        style: widget.style, maxLines: 1),
+                    const SizedBox(width: gap),
+                    Text(widget.text, style: widget.style, maxLines: 1),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

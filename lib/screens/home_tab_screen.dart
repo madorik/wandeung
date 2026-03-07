@@ -193,9 +193,99 @@ class HomeTabScreen extends ConsumerWidget {
   }
 }
 
-class _RecentGymsSection extends StatelessWidget {
+class _RecentGymsSection extends StatefulWidget {
   final List<String> gyms;
   const _RecentGymsSection({required this.gyms});
+
+  @override
+  State<_RecentGymsSection> createState() => _RecentGymsSectionState();
+}
+
+class _RecentGymsSectionState extends State<_RecentGymsSection>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  final GlobalKey _contentKey = GlobalKey();
+  double _contentWidth = 0;
+  bool _measured = false;
+
+  bool get _shouldMarquee => widget.gyms.length >= 2;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+    if (_shouldMarquee) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureAndStart());
+    }
+  }
+
+  void _measureAndStart() {
+    final box =
+        _contentKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final width = box.size.width;
+    if (width > 0) {
+      setState(() {
+        _contentWidth = width;
+        _measured = true;
+      });
+      // 8 is the gap between duplicated sets
+      final totalScroll = _contentWidth + 8;
+      // Speed: ~40 pixels per second
+      final duration = Duration(milliseconds: (totalScroll / 40 * 1000).round());
+      _controller
+        ..duration = duration
+        ..repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _buildChip(String name, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE8ECF0)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.location_on_outlined,
+            size: 15,
+            color: colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: colorScheme.onSurface.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChipRow(ColorScheme colorScheme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < widget.gyms.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          _buildChip(widget.gyms[i], colorScheme),
+        ],
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -219,39 +309,36 @@ class _RecentGymsSection extends StatelessWidget {
           ),
           SizedBox(
             height: 38,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: gyms.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) => Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE8ECF0)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.location_on_outlined,
-                      size: 15,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      gyms[i],
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: colorScheme.onSurface.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: _shouldMarquee
+                ? ClipRect(
+                    child: _measured
+                        ? AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, child) {
+                              final dx =
+                                  -_controller.value * (_contentWidth + 8);
+                              return Transform.translate(
+                                offset: Offset(dx, 0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildChipRow(colorScheme),
+                                    const SizedBox(width: 8),
+                                    _buildChipRow(colorScheme),
+                                  ],
+                                ),
+                              );
+                            },
+                          )
+                        : Row(
+                            key: _contentKey,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildChipRow(colorScheme),
+                            ],
+                          ),
+                  )
+                : _buildChipRow(colorScheme),
           ),
         ],
       ),
