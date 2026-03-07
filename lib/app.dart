@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
+import 'screens/home_loading_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_shell_screen.dart';
 
 class WandeungApp extends ConsumerWidget {
   const WandeungApp({super.key});
@@ -59,7 +59,7 @@ class WandeungApp extends ConsumerWidget {
       ),
       home: authState.when(
         data: (user) =>
-            user != null ? const MainShellScreen() : const LoginScreen(),
+            user != null ? const HomeLoadingScreen() : const LoginScreen(),
         loading: () => const Scaffold(
             body: Center(child: CircularProgressIndicator())),
         error: (_, __) => const LoginScreen(),
