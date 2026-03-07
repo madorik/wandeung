@@ -248,6 +248,10 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
         final settings = ref.read(cameraSettingsProvider);
         await _saveToGallery();
         final thumbnailPath = await generateThumbnail(widget.videoPath!);
+        final durationSeconds =
+            _videoController?.value.isInitialized == true
+                ? _videoController!.value.duration.inSeconds
+                : null;
         await RecordService.saveRecord(
           videoPath: widget.videoPath!,
           grade: settings.grade!.name,
@@ -259,6 +263,7 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
           manualGymName: settings.selectedGym == null ? settings.manualGymName : null,
           thumbnailPath: thumbnailPath,
           tags: _tags,
+          videoDurationSeconds: durationSeconds,
         );
       }
 
@@ -831,21 +836,48 @@ class _ExportedVideoCard extends StatelessWidget {
                 child: SizedBox(
                   width: 56,
                   height: 42,
-                  child: hasThumbnail
-                      ? Image.file(
-                          File(record.thumbnailPath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            color: const Color(0xFFE2E8F0),
-                            child: const Icon(Icons.movie_rounded,
-                                color: Colors.white, size: 20),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      hasThumbnail
+                          ? Image.file(
+                              File(record.thumbnailPath!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: const Color(0xFFE2E8F0),
+                                child: const Icon(Icons.movie_rounded,
+                                    color: Colors.white, size: 20),
+                              ),
+                            )
+                          : Container(
+                              color: const Color(0xFFE2E8F0),
+                              child: const Icon(Icons.movie_rounded,
+                                  color: Colors.white, size: 20),
+                            ),
+                      if (record.videoDurationSeconds != null)
+                        Positioned(
+                          right: 3,
+                          bottom: 3,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 3, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.65),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(
+                              '${record.videoDurationSeconds! ~/ 60}:${(record.videoDurationSeconds! % 60).toString().padLeft(2, '0')}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                                height: 1.2,
+                              ),
+                            ),
                           ),
-                        )
-                      : Container(
-                          color: const Color(0xFFE2E8F0),
-                          child: const Icon(Icons.movie_rounded,
-                              color: Colors.white, size: 20),
                         ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

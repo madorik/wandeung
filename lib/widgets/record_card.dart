@@ -103,15 +103,27 @@ class RecordCard extends StatelessWidget {
         child: SizedBox(
           width: 72,
           height: 72,
-          child: Image.file(
-            File(record.thumbnailPath!),
-            width: 72,
-            height: 72,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _GradeBadge(
-              grade: record.grade,
-              color: color,
-            ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.file(
+                File(record.thumbnailPath!),
+                width: 72,
+                height: 72,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _GradeBadge(
+                  grade: record.grade,
+                  color: color,
+                ),
+              ),
+              if (record.videoDurationSeconds != null)
+                Positioned(
+                  right: 4,
+                  bottom: 4,
+                  child: _DurationBadge(
+                      seconds: record.videoDurationSeconds!),
+                ),
+            ],
           ),
         ),
       );
@@ -211,6 +223,34 @@ class _TagBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           color: colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+    );
+  }
+}
+
+class _DurationBadge extends StatelessWidget {
+  final int seconds;
+  const _DurationBadge({required this.seconds});
+
+  @override
+  Widget build(BuildContext context) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    final label = '$minutes:${secs.toString().padLeft(2, '0')}';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.65),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          height: 1.2,
         ),
       ),
     );

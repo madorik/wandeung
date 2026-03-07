@@ -274,6 +274,7 @@ class RecordService {
     String? manualGymName,
     String? thumbnailPath,
     List<String> tags = const [],
+    int? videoDurationSeconds,
   }) async {
     final userId = _supabase.auth.currentUser!.id;
 
@@ -297,6 +298,7 @@ class RecordService {
       thumbnailPath: thumbnailPath,
       tags: tags,
       recordedAt: DateTime.now(),
+      videoDurationSeconds: videoDurationSeconds,
     );
 
     final response = await _supabase
@@ -349,6 +351,7 @@ class RecordService {
     required ClimbingRecord parentRecord,
     required String videoPath,
     String? thumbnailPath,
+    int? videoDurationSeconds,
   }) async {
     final userId = _supabase.auth.currentUser!.id;
 
@@ -363,6 +366,7 @@ class RecordService {
       tags: parentRecord.tags,
       recordedAt: parentRecord.recordedAt,
       parentRecordId: parentRecordId,
+      videoDurationSeconds: videoDurationSeconds,
     );
 
     final response = await _supabase

@@ -194,6 +194,7 @@ class _VideoEditorScreenState extends ConsumerState<VideoEditorScreen> {
             parentRecord: widget.existingRecord!,
             videoPath: result.outputPath,
             thumbnailPath: thumbnailPath,
+            videoDurationSeconds: result.duration.inSeconds,
           );
           if (mounted) {
             ref.invalidate(
