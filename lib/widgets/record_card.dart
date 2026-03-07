@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/climbing_record.dart';
-import '../screens/record_detail_screen.dart';
 import '../screens/record_save_screen.dart';
+import '../screens/video_playback_screen.dart';
 import '../utils/constants.dart';
 
 class RecordCard extends StatelessWidget {
@@ -69,7 +69,7 @@ class RecordCard extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            RecordDetailScreen(record: record, autoPlay: true),
+                            VideoPlaybackScreen(videoPath: record.videoPath!),
                       ),
                     );
                   },
