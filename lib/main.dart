@@ -1,7 +1,6 @@
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'config/supabase_config.dart';
 import 'app.dart';
@@ -16,19 +15,6 @@ void main() async {
     await FFmpegKitConfig.setFontDirectory('/system/fonts');
   } catch (e) {
     debugPrint('FFmpegKit font directory 설정 실패: $e');
-  }
-
-  // 네이버 지도 초기화 (실패해도 앱 구동에 영향 없음)
-  try {
-    final naverMapClientId = dotenv.env['NAVER_MAP_CLIENT_ID'] ?? '';
-    if (naverMapClientId.isNotEmpty) {
-      await FlutterNaverMap().init(
-        clientId: naverMapClientId,
-        onAuthFailed: (ex) => debugPrint('네이버 지도 인증 실패: $ex'),
-      );
-    }
-  } catch (e) {
-    debugPrint('네이버 지도 초기화 실패: $e');
   }
 
   runApp(const ProviderScope(child: WandeungApp()));

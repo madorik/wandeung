@@ -20,14 +20,9 @@ class MainActivity : FlutterActivity() {
             "camera_android_camerax" to { io.flutter.plugins.camerax.CameraAndroidCameraxPlugin() },
             "ffmpeg_kit_flutter_new" to { com.antonkarpenko.ffmpegkit.FFmpegKitFlutterPlugin() },
             "file_picker" to { com.mr.flutter.plugin.filepicker.FilePickerPlugin() },
-            // FlutterNaverMapPlugin is Kotlin-internal; use reflection
-            "flutter_naver_map" to {
-                val cls = Class.forName("dev.note11.flutter_naver_map.flutter_naver_map.FlutterNaverMapPlugin")
-                cls.getDeclaredConstructor().newInstance() as FlutterPlugin
-            },
             "flutter_plugin_android_lifecycle" to { io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin() },
+            "google_maps_flutter_android" to { io.flutter.plugins.googlemaps.GoogleMapsPlugin() },
             "gal" to { studio.midoridesign.gal.GalPlugin() },
-            "geocoding_android" to { com.baseflow.geocoding.GeocodingPlugin() },
             "geolocator_android" to { com.baseflow.geolocator.GeolocatorPlugin() },
             "get_thumbnail_video" to { xyz.justsoft.video_thumbnail.VideoThumbnailPlugin() },
             "google_sign_in_android" to { io.flutter.plugins.googlesignin.GoogleSignInPlugin() },

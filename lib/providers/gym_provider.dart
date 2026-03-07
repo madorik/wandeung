@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:http/http.dart' as http;
 import '../models/climbing_gym.dart';
 
-// 현재 위치 (공유)
 final userPositionProvider = FutureProvider<Position?>((ref) async {
   LocationPermission permission = await Geolocator.checkPermission();
   if (permission == LocationPermission.denied) {
@@ -22,50 +20,54 @@ final userPositionProvider = FutureProvider<Position?>((ref) async {
   }
 });
 
-// 지도 검색어
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-// 네이버 지역 검색 API 호출 (내부 헬퍼)
-Future<List<ClimbingGym>> _searchNaverGyms({
+Future<List<ClimbingGym>> _searchGooglePlaces({
   required String searchQuery,
-  required String sort,
-  required String clientId,
-  required String clientSecret,
+  required String apiKey,
   Position? position,
   bool filterByDistance = false,
 }) async {
+  final queryParams = <String, String>{
+    'query': searchQuery,
+    'key': apiKey,
+    'language': 'ko',
+  };
+
+  if (position != null) {
+    queryParams['location'] = '${position.latitude},${position.longitude}';
+    queryParams['radius'] = '20000';
+  }
+
   final uri = Uri.https(
-    'openapi.naver.com',
-    '/v1/search/local.json',
-    {'query': searchQuery, 'display': '20', 'sort': sort},
+    'maps.googleapis.com',
+    '/maps/api/place/textsearch/json',
+    queryParams,
   );
-  final response = await http.get(uri, headers: {
-    'X-Naver-Client-Id': clientId,
-    'X-Naver-Client-Secret': clientSecret,
-  });
+
+  final response = await http.get(uri);
   if (response.statusCode != 200) return [];
 
-  final items = jsonDecode(response.body)['items'] as List;
-  final gyms = items
-      .where((item) =>
-          item['mapx'] != null &&
-          item['mapy'] != null &&
-          item['mapx'].toString().isNotEmpty)
+  final body = jsonDecode(response.body);
+  if (body['status'] != 'OK' && body['status'] != 'ZERO_RESULTS') return [];
+
+  final results = (body['results'] as List?) ?? [];
+
+  final gyms = results
       .map((item) {
-        final lng = double.parse(item['mapx'].toString()) / 1e7;
-        final lat = double.parse(item['mapy'].toString()) / 1e7;
-        final name =
-            (item['title'] as String).replaceAll(RegExp(r'<[^>]*>'), '');
+        final location = item['geometry']?['location'];
+        final lat = (location?['lat'] as num?)?.toDouble();
+        final lng = (location?['lng'] as num?)?.toDouble();
         return ClimbingGym(
           id: null,
-          name: name,
-          address: (item['roadAddress'] as String?)?.isNotEmpty == true
-              ? item['roadAddress']
-              : item['address'],
+          name: item['name'] ?? '',
+          address: item['formatted_address'],
           latitude: lat,
           longitude: lng,
         );
       })
+      .where((gym) =>
+          gym.name.isNotEmpty && gym.latitude != null && gym.longitude != null)
       .toList();
 
   if (position != null) {
@@ -78,9 +80,8 @@ Future<List<ClimbingGym>> _searchNaverGyms({
     });
     if (filterByDistance) {
       return gyms.where((gym) {
-        final dist = Geolocator.distanceBetween(
-            position.latitude, position.longitude,
-            gym.latitude!, gym.longitude!);
+        final dist = Geolocator.distanceBetween(position.latitude,
+            position.longitude, gym.latitude!, gym.longitude!);
         return dist <= 20000;
       }).toList();
     }
@@ -89,41 +90,17 @@ Future<List<ClimbingGym>> _searchNaverGyms({
   return gyms;
 }
 
-Future<String> _reverseGeocodePrefix(Position position) async {
-  try {
-    final placemarks =
-        await placemarkFromCoordinates(position.latitude, position.longitude);
-    if (placemarks.isNotEmpty) {
-      final p = placemarks.first;
-      final district = p.subAdministrativeArea ?? '';
-      final neighborhood = p.subLocality ?? '';
-      if (neighborhood.isNotEmpty) return '$district $neighborhood';
-      if (district.isNotEmpty) return district;
-    }
-  } catch (_) {}
-  return '';
-}
-
-// 주변 클라이밍장 (GymSelector용 — 위치 기반, 위치 없어도 검색)
+// 주변 클라이밍장 (GymSelector용 — 위치 기반)
 final nearbyGymsProvider = FutureProvider<List<ClimbingGym>>((ref) async {
   final positionFuture = ref.watch(userPositionProvider.future);
   final position = await positionFuture;
 
-  final clientId = dotenv.env['NAVER_CLIENT_ID'] ?? '';
-  final clientSecret = dotenv.env['NAVER_CLIENT_SECRET'] ?? '';
-  if (clientId.isEmpty || clientSecret.isEmpty) return [];
+  final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+  if (apiKey.isEmpty) return [];
 
-  String searchQuery = '클라이밍짐';
-  if (position != null) {
-    final prefix = await _reverseGeocodePrefix(position);
-    if (prefix.isNotEmpty) searchQuery = '$prefix 클라이밍짐';
-  }
-
-  return _searchNaverGyms(
-    searchQuery: searchQuery,
-    sort: 'comment',
-    clientId: clientId,
-    clientSecret: clientSecret,
+  return _searchGooglePlaces(
+    searchQuery: '클라이밍짐',
+    apiKey: apiKey,
     position: position,
     filterByDistance: position != null,
   );
@@ -140,17 +117,14 @@ final gymsProvider = FutureProvider<List<ClimbingGym>>((ref) async {
   final positionFuture = ref.watch(userPositionProvider.future);
   final position = await positionFuture;
 
-  final clientId = dotenv.env['NAVER_CLIENT_ID'] ?? '';
-  final clientSecret = dotenv.env['NAVER_CLIENT_SECRET'] ?? '';
-  if (clientId.isEmpty || clientSecret.isEmpty) return [];
+  final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+  if (apiKey.isEmpty) return [];
 
   final searchQuery = query.contains('클라이밍') ? query : '$query 클라이밍짐';
 
-  return _searchNaverGyms(
+  return _searchGooglePlaces(
     searchQuery: searchQuery,
-    sort: 'random',
-    clientId: clientId,
-    clientSecret: clientSecret,
+    apiKey: apiKey,
     position: position,
     filterByDistance: false,
   );

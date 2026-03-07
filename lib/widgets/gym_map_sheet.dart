@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/climbing_gym.dart';
 import '../providers/gym_provider.dart';
 
-/// Local search query for the map picker, separate from MapTabScreen's searchQueryProvider.
 final _mapPickerQueryProvider = StateProvider<String>((ref) => '');
 
 class GymMapSheet extends ConsumerStatefulWidget {
@@ -18,7 +17,6 @@ class GymMapSheet extends ConsumerStatefulWidget {
     this.onGymSelected,
   });
 
-  /// Read-only mode: show a selected gym on the map
   static Future<void> show(BuildContext context,
       {required ClimbingGym selectedGym}) {
     return showModalBottomSheet(
@@ -36,7 +34,6 @@ class GymMapSheet extends ConsumerStatefulWidget {
     );
   }
 
-  /// Selection mode: pick a gym from the map, returns the chosen gym
   static Future<ClimbingGym?> pick(BuildContext context) {
     return showModalBottomSheet<ClimbingGym>(
       context: context,
@@ -60,8 +57,7 @@ class GymMapSheet extends ConsumerStatefulWidget {
 }
 
 class _GymMapSheetState extends ConsumerState<GymMapSheet> {
-  NaverMapController? _controller;
-  bool _disposed = false;
+  GoogleMapController? _controller;
   ClimbingGym? _tappedGym;
   List<ClimbingGym> _gyms = [];
   final _searchController = TextEditingController();
@@ -77,74 +73,61 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
 
   @override
   void dispose() {
-    _disposed = true;
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onMapReady(NaverMapController controller) {
-    if (_disposed) return;
+  void _onMapCreated(GoogleMapController controller) {
     _controller = controller;
 
     if (_isPickMode) {
       ref.read(userPositionProvider.future).then((pos) {
-        if (pos != null && !_disposed) {
-          controller.updateCamera(
-            NCameraUpdate.scrollAndZoomTo(
-              target: NLatLng(pos.latitude, pos.longitude),
-              zoom: 14,
+        if (pos != null && mounted) {
+          controller.animateCamera(
+            CameraUpdate.newCameraPosition(
+              CameraPosition(
+                target: LatLng(pos.latitude, pos.longitude),
+                zoom: 14,
+              ),
             ),
           );
         }
       });
     }
-
-    _refreshMarkers();
   }
 
-  Future<void> _refreshMarkers() async {
-    final controller = _controller;
-    if (controller == null || _disposed || !mounted) return;
+  Set<Marker> _buildMarkers() {
+    return _gyms
+        .where((gym) => gym.latitude != null && gym.longitude != null)
+        .map((gym) {
+          final isTapped = _tappedGym?.name == gym.name;
+          final isPreSelected = widget.selectedGym?.name == gym.name;
+          final isHighlighted = isTapped || isPreSelected;
 
-    final colorScheme = Theme.of(context).colorScheme;
-
-    await controller.clearOverlays();
-    if (_disposed || !mounted) return;
-
-    for (final gym in _gyms) {
-      if (gym.latitude == null || gym.longitude == null) continue;
-
-      final isTapped = _tappedGym?.name == gym.name;
-      final isPreSelected = widget.selectedGym?.name == gym.name;
-      final isHighlighted = isTapped || isPreSelected;
-
-      final marker = NMarker(
-        id: gym.name,
-        position: NLatLng(gym.latitude!, gym.longitude!),
-      );
-      marker.setIconTintColor(
-          isHighlighted ? colorScheme.primary : const Color(0xFFE53935));
-      marker.setSize(isHighlighted ? const Size(36, 46) : const Size(30, 38));
-      marker.setAlpha(isHighlighted ? 1.0 : 0.9);
-
-      marker.setOnTapListener((_) {
-        setState(() => _tappedGym = gym);
-        _refreshMarkers();
-        controller.updateCamera(
-          NCameraUpdate.scrollAndZoomTo(
-            target: NLatLng(gym.latitude!, gym.longitude!),
-          ),
-        );
-      });
-
-      await controller.addOverlay(marker);
-    }
+          return Marker(
+            markerId: MarkerId(gym.name),
+            position: LatLng(gym.latitude!, gym.longitude!),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              isHighlighted
+                  ? BitmapDescriptor.hueAzure
+                  : BitmapDescriptor.hueRed,
+            ),
+            onTap: () {
+              setState(() => _tappedGym = gym);
+              _controller?.animateCamera(
+                CameraUpdate.newLatLng(
+                  LatLng(gym.latitude!, gym.longitude!),
+                ),
+              );
+            },
+          );
+        })
+        .toSet();
   }
 
   void _onSearch(String query) {
     if (_isPickMode) {
       ref.read(_mapPickerQueryProvider.notifier).state = query.trim();
-      // Also update global search so gymsProvider picks it up
       ref.read(searchQueryProvider.notifier).state = query.trim();
       setState(() => _showSearchResults = query.trim().isNotEmpty);
     }
@@ -164,12 +147,10 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
       _tappedGym = gym;
       _showSearchResults = false;
     });
-    _refreshMarkers();
     if (gym.latitude != null && gym.longitude != null) {
-      _controller?.updateCamera(
-        NCameraUpdate.scrollAndZoomTo(
-          target: NLatLng(gym.latitude!, gym.longitude!),
-          zoom: 15,
+      _controller?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(gym.latitude!, gym.longitude!), 15,
         ),
       );
     }
@@ -189,23 +170,19 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
     final colorScheme = Theme.of(context).colorScheme;
     final pickerQuery = ref.watch(_mapPickerQueryProvider);
 
-    // Watch the appropriate provider
     final gymsAsync = _isPickMode
         ? ref.watch(gymsProvider)
         : ref.watch(nearbyGymsProvider);
 
-    // Sync local gym list
     ref.listen(
       _isPickMode ? gymsProvider : nearbyGymsProvider,
       (_, next) {
         next.whenData((gyms) {
-          _gyms = gyms;
-          _refreshMarkers();
+          setState(() => _gyms = gyms);
         });
       },
     );
 
-    // Initialize gyms on first data
     gymsAsync.whenData((gyms) {
       if (_gyms.isEmpty) {
         _gyms = gyms;
@@ -215,12 +192,11 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
     final initialTarget = widget.selectedGym != null &&
             widget.selectedGym!.latitude != null &&
             widget.selectedGym!.longitude != null
-        ? NLatLng(widget.selectedGym!.latitude!, widget.selectedGym!.longitude!)
-        : const NLatLng(37.5665, 126.9780);
+        ? LatLng(widget.selectedGym!.latitude!, widget.selectedGym!.longitude!)
+        : const LatLng(37.5665, 126.9780);
 
     return Column(
       children: [
-        // Header
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -239,7 +215,6 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
           ),
         ),
 
-        // Search bar (pick mode only)
         if (_isPickMode)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -268,26 +243,24 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
             ),
           ),
 
-        // Map + search results overlay
         Expanded(
           child: Stack(
             children: [
-              NaverMap(
-                options: NaverMapViewOptions(
-                  initialCameraPosition: NCameraPosition(
-                    target: initialTarget,
-                    zoom: _isPickMode ? 14 : 15,
-                  ),
-                  locationButtonEnable: _isPickMode,
+              GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: initialTarget,
+                  zoom: _isPickMode ? 14 : 15,
                 ),
-                onMapReady: _onMapReady,
-                onMapTapped: (_, __) {
+                markers: _buildMarkers(),
+                myLocationEnabled: _isPickMode,
+                myLocationButtonEnabled: _isPickMode,
+                onMapCreated: _onMapCreated,
+                onTap: (_) {
                   if (_isPickMode) {
                     setState(() {
                       _tappedGym = null;
                       _showSearchResults = false;
                     });
-                    _refreshMarkers();
                   }
                 },
               ),
@@ -319,7 +292,6 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
                     ),
                   ),
                 ),
-              // Search results overlay
               if (_isPickMode && _showSearchResults)
                 Positioned.fill(
                   child: Container(
@@ -405,7 +377,6 @@ class _GymMapSheetState extends ConsumerState<GymMapSheet> {
           ),
         ),
 
-        // Bottom info card
         _buildBottomCard(colorScheme),
       ],
     );

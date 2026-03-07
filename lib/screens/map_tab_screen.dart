@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/climbing_gym.dart';
@@ -13,10 +13,11 @@ class MapTabScreen extends ConsumerStatefulWidget {
 }
 
 class _MapTabScreenState extends ConsumerState<MapTabScreen> {
-  NaverMapController? _controller;
+  GoogleMapController? _controller;
   ClimbingGym? _selectedGym;
   bool _listExpanded = true;
   final _searchController = TextEditingController();
+  List<ClimbingGym> _currentGyms = [];
 
   @override
   void dispose() {
@@ -24,53 +25,43 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
     super.dispose();
   }
 
-  void _onMapReady(NaverMapController controller) {
+  void _onMapCreated(GoogleMapController controller) {
     _controller = controller;
-    _moveToCurrentLocation(controller);
-    ref.read(gymsProvider).whenData(_addMarkers);
+    _moveToCurrentLocation();
   }
 
-  Future<void> _moveToCurrentLocation(NaverMapController controller) async {
+  Future<void> _moveToCurrentLocation() async {
     try {
       final position = await ref.read(userPositionProvider.future);
-      if (position == null) return;
-      await controller.updateCamera(
-        NCameraUpdate.scrollAndZoomTo(
-          target: NLatLng(position.latitude, position.longitude),
-          zoom: 14,
+      if (position == null || _controller == null) return;
+      _controller!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(position.latitude, position.longitude),
+            zoom: 14,
+          ),
         ),
       );
     } catch (_) {}
   }
 
-  Future<void> _addMarkers(List<ClimbingGym> gyms) async {
-    final controller = _controller;
-    if (controller == null) return;
-
-    final colorScheme = Theme.of(context).colorScheme;
-    await controller.clearOverlays();
-
-    for (final gym in gyms) {
-      if (gym.latitude == null || gym.longitude == null) continue;
-
-      final isSelected = _selectedGym?.name == gym.name;
-
-      final marker = NMarker(
-        id: gym.name,
-        position: NLatLng(gym.latitude!, gym.longitude!),
-      );
-      marker.setSize(isSelected ? const Size(36, 46) : const Size(30, 38));
-      marker.setIconTintColor(
-          isSelected ? colorScheme.primary : const Color(0xFFE53935));
-      marker.setAlpha(isSelected ? 1.0 : 0.9);
-
-      marker.setOnTapListener((_) {
-        setState(() => _selectedGym = gym);
-        _addMarkers(gyms);
-      });
-
-      await controller.addOverlay(marker);
-    }
+  Set<Marker> _buildMarkers() {
+    return _currentGyms
+        .where((gym) => gym.latitude != null && gym.longitude != null)
+        .map((gym) {
+          final isSelected = _selectedGym?.name == gym.name;
+          return Marker(
+            markerId: MarkerId(gym.name),
+            position: LatLng(gym.latitude!, gym.longitude!),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              isSelected
+                  ? BitmapDescriptor.hueAzure
+                  : BitmapDescriptor.hueRed,
+            ),
+            onTap: () => setState(() => _selectedGym = gym),
+          );
+        })
+        .toSet();
   }
 
   void _onSearch(String query) {
@@ -85,10 +76,9 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
   Future<void> _selectGym(ClimbingGym gym) async {
     setState(() => _selectedGym = gym);
     if (gym.latitude != null && gym.longitude != null) {
-      await _controller?.updateCamera(
-        NCameraUpdate.scrollAndZoomTo(
-          target: NLatLng(gym.latitude!, gym.longitude!),
-          zoom: 15,
+      _controller?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(gym.latitude!, gym.longitude!), 15,
         ),
       );
     }
@@ -107,10 +97,19 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
   @override
   Widget build(BuildContext context) {
     ref.listen(gymsProvider, (_, next) {
-      next.whenData(_addMarkers);
+      next.whenData((gyms) {
+        setState(() => _currentGyms = gyms);
+      });
     });
 
     final gymsAsync = ref.watch(gymsProvider);
+
+    gymsAsync.whenData((gyms) {
+      if (_currentGyms.isEmpty) {
+        _currentGyms = gyms;
+      }
+    });
+
     final positionAsync = ref.watch(userPositionProvider);
     final searchQuery = ref.watch(searchQueryProvider);
     final colorScheme = Theme.of(context).colorScheme;
@@ -145,23 +144,21 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
       ),
       body: Column(
         children: [
-          // 지도 영역
           Expanded(
             flex: _listExpanded ? 55 : 90,
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: NaverMap(
-                    options: const NaverMapViewOptions(
-                      initialCameraPosition: NCameraPosition(
-                        target: NLatLng(37.5665, 126.9780),
-                        zoom: 12,
-                      ),
-                      locationButtonEnable: true,
+                  child: GoogleMap(
+                    initialCameraPosition: const CameraPosition(
+                      target: LatLng(37.5665, 126.9780),
+                      zoom: 12,
                     ),
-                    onMapReady: _onMapReady,
-                    onMapTapped: (_, __) =>
-                        setState(() => _selectedGym = null),
+                    markers: _buildMarkers(),
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    onMapCreated: _onMapCreated,
+                    onTap: (_) => setState(() => _selectedGym = null),
                   ),
                 ),
                 if (gymsAsync.isLoading)
@@ -196,7 +193,6 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
             ),
           ),
 
-          // 목록 패널
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeInOut,
@@ -213,7 +209,6 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
             ),
             child: Column(
               children: [
-                // 패널 헤더 (탭하면 토글)
                 InkWell(
                   onTap: () =>
                       setState(() => _listExpanded = !_listExpanded),
@@ -256,7 +251,6 @@ class _MapTabScreenState extends ConsumerState<MapTabScreen> {
                   ),
                 ),
 
-                // 목록
                 if (_listExpanded)
                   Expanded(
                     child: gymsAsync.when(
