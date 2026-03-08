@@ -40,6 +40,7 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
   ClimbingStatus _status = ClimbingStatus.completed;
   List<String> _tags = [];
   bool _isSaving = false;
+  bool _videoFileMissing = false;
 
   // 편집 모드 전용 로컬 gym 상태 (카메라 탭의 자동 선택과 분리)
   ClimbingGym? _editGym;
@@ -94,7 +95,10 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
     if (path == null) return;
 
     if (path.startsWith('/')) {
-      if (!File(path).existsSync()) return;
+      if (!File(path).existsSync()) {
+        if (mounted) setState(() => _videoFileMissing = true);
+        return;
+      }
       _videoController = VideoPlayerController.file(File(path));
     } else {
       final url = await SupabaseConfig.client.storage
@@ -421,6 +425,29 @@ class _RecordSaveScreenState extends ConsumerState<RecordSaveScreen> {
                             ),
                           ),
                       ],
+                    )
+                  else if (_videoFileMissing)
+                    Container(
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8ECF0),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.videocam_off_rounded, size: 36,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.25)),
+                            const SizedBox(height: 6),
+                            Text('영상 파일을 찾을 수 없습니다.\n촬영 영상은 기기에만 저장되므로,\n파일 삭제·이동 또는 다른 기기에서\n로그인한 경우 재생할 수 없습니다.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4))),
+                          ],
+                        ),
+                      ),
                     )
                   else if (_videoController == null &&
                       _isEditMode &&

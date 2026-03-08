@@ -30,7 +30,7 @@ class _VideoPlaybackScreenState extends State<VideoPlaybackScreen> {
 
     if (path.startsWith('/')) {
       if (!File(path).existsSync()) {
-        if (mounted) setState(() => _errorMessage = '영상 파일이 삭제되었습니다');
+        if (mounted) setState(() => _errorMessage = '영상 파일을 찾을 수 없습니다.\n촬영 영상은 기기에만 저장되므로,\n파일 삭제·이동 또는 다른 기기에서\n로그인한 경우 재생할 수 없습니다.');
         return;
       }
       _videoController = VideoPlayerController.file(File(path));

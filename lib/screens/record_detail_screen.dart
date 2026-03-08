@@ -22,11 +22,19 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   double? _displayAspectRatio;
+  bool _videoInitDone = false;
+  bool _videoFileMissing = false;
 
   @override
   void initState() {
     super.initState();
-    _initVideo();
+    final path = widget.record.videoPath;
+    if (path != null && path.startsWith('/') && !File(path).existsSync()) {
+      _videoFileMissing = true;
+      _videoInitDone = true;
+    } else {
+      _initVideo();
+    }
   }
 
   Future<void> _initVideo() async {
@@ -36,9 +44,11 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     // 절대 경로면 로컬 파일, 아니면 Supabase Storage (구 기록 호환)
     if (path.startsWith('/')) {
       if (!File(path).existsSync()) {
-        // 캐시에 저장된 구 기록의 영상이 삭제된 경우
         if (mounted) {
-          setState(() {}); // _videoController == null → 영상 없음 표시
+          setState(() {
+            _videoFileMissing = true;
+            _videoInitDone = true;
+          });
         }
         return;
       }
@@ -58,7 +68,7 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       debugPrint('영상 초기화 실패: $e');
       _videoController?.dispose();
       _videoController = null;
-      if (mounted) setState(() {});
+      if (mounted) setState(() => _videoInitDone = true);
       return;
     }
 
@@ -88,7 +98,7 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       ],
     );
 
-    if (mounted) setState(() {});
+    if (mounted) setState(() => _videoInitDone = true);
   }
 
   @override
@@ -161,12 +171,9 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                   );
                 },
               )
-            else if (record.videoPath != null &&
-                _videoController == null &&
-                record.videoPath!.startsWith('/') &&
-                !File(record.videoPath!).existsSync())
+            else if (_videoFileMissing)
               Container(
-                height: 200,
+                height: 240,
                 color: const Color(0xFFE8ECF0),
                 child: Center(
                   child: Column(
@@ -175,14 +182,15 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
                       Icon(Icons.videocam_off_rounded, size: 48,
                           color: colorScheme.onSurface.withOpacity(0.25)),
                       const SizedBox(height: 8),
-                      Text('영상 파일이 삭제되었습니다',
+                      Text('영상 파일을 찾을 수 없습니다.\n촬영 영상은 기기에만 저장되므로,\n파일 삭제·이동 또는 다른 기기에서\n로그인한 경우 재생할 수 없습니다.',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                               color: colorScheme.onSurface.withOpacity(0.4))),
                     ],
                   ),
                 ),
               )
-            else if (record.videoPath != null)
+            else if (record.videoPath != null && !_videoInitDone)
               const SizedBox(
                 height: 200,
                 child: Center(child: CircularProgressIndicator()),

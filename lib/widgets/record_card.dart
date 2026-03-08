@@ -66,11 +66,20 @@ class RecordCard extends StatelessWidget {
               if (record.videoPath != null)
                 GestureDetector(
                   onTap: () {
+                    final path = record.videoPath!;
+                    if (path.startsWith('/') && !File(path).existsSync()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('영상 파일을 찾을 수 없습니다. 촬영 영상은 기기에만 저장되므로, 파일을 삭제했거나 다른 기기에서 로그인한 경우 재생할 수 없습니다.'),
+                        ),
+                      );
+                      return;
+                    }
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            VideoPlaybackScreen(videoPath: record.videoPath!),
+                            VideoPlaybackScreen(videoPath: path),
                       ),
                     );
                   },
