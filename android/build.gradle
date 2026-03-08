@@ -23,10 +23,10 @@ subprojects {
         }
         project.beforeEvaluate {
             project.ext.flutter = [
-                compileSdkVersion: 35,
-                minSdkVersion: 21,
+                compileSdkVersion: 36,
+                minSdkVersion: 24,
                 targetSdkVersion: 35,
-                ndkVersion: "25.1.8937393",
+                ndkVersion: "27.0.12077973",
                 versionCode: 1,
                 versionName: "1.0.0"
             ]

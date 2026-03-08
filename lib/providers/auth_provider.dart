@@ -63,4 +63,32 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     await _supabase.auth.signOut();
     state = const AsyncValue.data(null);
   }
+
+  Future<void> deleteAccount() async {
+    final userId = _supabase.auth.currentUser!.id;
+
+    // 스토리지 영상 삭제
+    try {
+      final files =
+          await _supabase.storage.from('climbing-videos').list(path: userId);
+      if (files.isNotEmpty) {
+        final paths = files.map((f) => '$userId/${f.name}').toList();
+        await _supabase.storage.from('climbing-videos').remove(paths);
+      }
+    } catch (_) {
+      // 스토리지 삭제 실패해도 계속 진행
+    }
+
+    // 등반 기록 삭제
+    await _supabase.from('climbing_records').delete().eq('user_id', userId);
+
+    // 사용자가 생성한 암장 삭제
+    await _supabase.from('climbing_gyms').delete().eq('created_by', userId);
+
+    // auth.users에서 계정 삭제 (SECURITY DEFINER 함수)
+    await _supabase.rpc('delete_own_user');
+
+    await GoogleSignIn().signOut();
+    state = const AsyncValue.data(null);
+  }
 }
